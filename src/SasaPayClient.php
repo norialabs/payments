@@ -29,7 +29,14 @@ class SasaPayClient
 
     public const WAAS_PRODUCTION_BASE_URL = 'https://api.sasapay.app/api/v2/waas';
 
-    public const TOKEN_PATH = '/oauth/v1/generate';
+    /**
+     * Both surfaces authenticate at `{base_url}/auth/token/`, GET, HTTP Basic, with
+     * `grant_type` in the query string.
+     *
+     * @see https://developer.sasapay.app/docs/apis/authentication
+     * @see https://developer.sasapay.app/docs/apis/waas/authentication
+     */
+    public const TOKEN_PATH = '/auth/token/';
 
     public const ENDPOINTS = [
         'request_payment' => '/payments/request-payment/',
@@ -866,24 +873,33 @@ class SasaPayClient
         );
     }
 
+    /**
+     * The token path hangs off the whole base URL, including its `/api/v1` or
+     * `/api/v2/waas` prefix. Rebuilding from `scheme://host` alone would drop that
+     * prefix and point both surfaces at a path SasaPay does not serve.
+     *
+     * `waas_token_url` deliberately does not fall back to `token_url`: the two are
+     * different endpoints, so reusing a configured v1 URL for WAAS would authenticate
+     * against the wrong surface.
+     */
     private static function resolveTokenUrl(array $config, string $baseUrl, string $key = 'token_url'): string
     {
-        $configured = $config[$key] ?? ($key === 'waas_token_url' ? ($config['token_url'] ?? null) : null);
+        $configured = $config[$key] ?? null;
 
         if (is_string($configured) && trim($configured) !== '') {
-            return $configured;
+            return trim($configured);
         }
 
+        $baseUrl = trim($baseUrl);
         $parts = parse_url($baseUrl);
-        if (! is_array($parts) || ! isset($parts['scheme'], $parts['host'])) {
+
+        if ($baseUrl === '' || ! is_array($parts) || ! isset($parts['scheme'], $parts['host'])) {
             throw new ConfigurationException(
                 "Unable to derive the SasaPay authentication URL from base URL [{$baseUrl}]. Set {$key} explicitly."
             );
         }
 
-        $port = isset($parts['port']) ? ':'.$parts['port'] : '';
-
-        return $parts['scheme'].'://'.$parts['host'].$port.self::TOKEN_PATH;
+        return rtrim($baseUrl, '/').self::TOKEN_PATH;
     }
 
     private static function resolveEndpoints(array $config, string $key, array $defaults): array
