@@ -8,7 +8,7 @@ Laravel package for payment providers:
 - KCB Buni APIs
 - Paystack APIs
 
-The package is a Laravel-native HTTP SDK. It registers container bindings, publishes config, obtains and caches OAuth tokens where providers require them, sends authenticated requests, supports retries and hooks, verifies SasaPay callbacks, KCB Buni IPNs, and Paystack webhooks, and throws typed exceptions for HTTP and network failures.
+The package is a Laravel-native HTTP SDK. It registers container bindings, publishes config, obtains and caches OAuth tokens where providers require them, sends authenticated requests, supports retries and hooks, verifies KCB Buni IPNs and Paystack webhooks, applies the available controls to SasaPay callbacks, and throws typed exceptions for HTTP and network failures.
 
 It does not persist transactions, define your application callback controllers, reconcile settlements, or transform provider callback payloads. Your application owns those concerns.
 
@@ -106,8 +106,8 @@ Top-level sections:
 | `environment` | `sandbox` or `production`. Any other value requires an explicit `base_url`. |
 | `base_url` | SasaPay v1 base URL. Defaults to `https://sandbox.sasapay.app/api/v1` in sandbox and `https://api.sasapay.app/api/v1` in production. |
 | `waas_base_url` | SasaPay WAAS v2 base URL. Defaults to `https://sandbox.sasapay.app/api/v2/waas` in sandbox and `https://api.sasapay.app/api/v2/waas` in production. |
-| `token_url` | Optional full SasaPay OAuth URL. Defaults to `/oauth/v1/generate` on the v1 base URL host. |
-| `waas_token_url` | Optional full WAAS OAuth URL. Defaults to `token_url`, then `/oauth/v1/generate` on the WAAS base URL host. |
+| `token_url` | Optional full SasaPay v1 OAuth URL. Defaults to `/auth/token/` appended to `base_url`. |
+| `waas_token_url` | Optional full WAAS OAuth URL. Defaults to `/auth/token/` appended to `waas_base_url`. It does not fall back to `token_url`: the two are different endpoints. |
 | `throw_on_business_error` | Throw `BusinessException` when SasaPay answers HTTP 200 with `"status": false`. Defaults to `false`. See [Business-Level Failures](#business-level-failures). |
 | `client_id` | SasaPay v1 client ID. Also used for WAAS unless WAAS-specific credentials are configured. |
 | `client_secret` | SasaPay v1 client secret. Also used for WAAS unless WAAS-specific credentials are configured. |
@@ -125,12 +125,21 @@ Top-level sections:
 | `callback_security.secret_key` | HMAC secret for inbound callbacks. Defaults to the SasaPay client ID, as documented by SasaPay. |
 | `callback_security.trusted_ips` | SasaPay callback source IP allowlist. Defaults to the documented SasaPay list. Override in published config or with comma-separated `SASAPAY_CALLBACK_TRUSTED_IPS`. |
 | `callback_security.enforce_ip_whitelist` | Reject callbacks from non-allowlisted IPs when using `verifyRequest()` or the middleware. Defaults to `false`; enable it after Laravel trusted proxy handling is configured for your deployment. |
-| `callback_security.verify_signature` | Verify callback HMAC signatures when using `verifyRequest()` or the middleware. Defaults to `true`; set `SASAPAY_CALLBACK_VERIFY_SIGNATURE=false` only if you intentionally rely on a different callback-authentication control. |
+| `callback_security.verify_signature` | Verify callback HMAC signatures when using `verifyRequest()` or the middleware. Defaults to `true`, which fails closed: SasaPay publishes no signing scheme, so unless it has issued you one every callback is rejected. Set `SASAPAY_CALLBACK_VERIFY_SIGNATURE=false` when you rely on a capability token or IP allowlisting instead. See [SasaPay Callback Security](#sasapay-callback-security). |
 
-SasaPay documents OAuth client-credentials authentication at
-`/oauth/v1/generate`. The client derives that endpoint from the configured API
-host. Override `token_url` / `waas_token_url` if SasaPay issues your application
-a different authentication host.
+SasaPay documents OAuth client-credentials authentication separately for each
+surface, and each authenticates on its own base URL:
+
+| Surface | Token endpoint | Docs |
+| --- | --- | --- |
+| v1 | `GET {base_url}/auth/token/?grant_type=client_credentials` | [authentication](https://developer.sasapay.app/docs/apis/authentication) |
+| WAAS | `GET {waas_base_url}/auth/token/?grant_type=client_credentials` | [waas/authentication](https://developer.sasapay.app/docs/apis/waas/authentication) |
+
+Both send HTTP Basic with the client ID and secret, and carry `grant_type` in the
+query string. The two responses differ: v1 reports success as `"status": true`
+with `detail` and `scope`, WAAS as `"statusCode": 0`. Override `token_url` /
+`waas_token_url` if SasaPay issues your application a different authentication
+host.
 
 ### KCB Buni Config
 
@@ -357,18 +366,33 @@ public function __invoke(Request $request, PaystackWebhookVerifier $verifier)
 
 ### SasaPay Callback Security
 
-SasaPay documents two callback/IPN controls:
+> **SasaPay publishes no callback authentication scheme.** Searching its
+> documentation for `signature`, `hmac`, `sha256`, `checksum` and `allowlist`
+> returns nothing for the C2B callback, the IPN, the B2C/B2B result callback or
+> the status-query callback. The two controls below are *ours*, not SasaPay's,
+> and the trusted-IP list is observed rather than published.
 
-- verify the request source IP against the SasaPay allowlist
-- verify the callback signature with HMAC-SHA512
+The controls this package provides:
 
-The signed message format is:
+- **HMAC-SHA512 over a canonical message.** Enable this only if SasaPay has
+  separately issued your account this scheme. Against an account that signs
+  nothing it rejects every legitimate callback, so `verify_signature` should be
+  turned off unless you have confirmed otherwise.
+- **Source-IP allowlisting** against the observed SasaPay egress addresses.
+
+A stronger control, and the one to prefer when SasaPay has issued you nothing:
+`CallBackURL` is supplied per request, so append a capability token of your own
+at initiation (`?token=…`) and check it on receipt. It proves the caller knew a
+secret you only ever sent to SasaPay. It authenticates the *caller*, not the
+*body*, so still confirm with a transaction status query before settling.
+
+The signed message format, when the HMAC scheme is in use, is:
 
 ```text
 sasapay_transaction_code-merchant_code-account_number-payment_reference-amount
 ```
 
-The HMAC secret is the Merchant API Client ID unless you override `payments.sasapay.callback_security.secret_key`. Signature verification and IP allowlisting are independent controls:
+The HMAC secret defaults to the Merchant API Client ID unless you override `payments.sasapay.callback_security.secret_key`. Signature verification and IP allowlisting are independent controls:
 
 - `SASAPAY_CALLBACK_VERIFY_SIGNATURE=true|false`
 - `SASAPAY_CALLBACK_ENFORCE_IP_WHITELIST=true|false`
@@ -399,9 +423,9 @@ public function __invoke(Request $request, SasaPayCallbackVerifier $verifier)
 }
 ```
 
-The verifier accepts documented SasaPay callback field names only; it does not infer case variants or provider-specific names that are not in SasaPay's published callback examples. The documented signature field is `sasapay_signature`; if your application receives the signature through another transport, pass it explicitly to `verify($payload, signature: $value)`.
+The verifier reads callback fields by the names that appear in SasaPay's published callback examples; it does not infer case variants or names that are not in them. The aliases below are genuinely useful regardless of the signature question, because SasaPay names the same value differently across products. The signature is read from a `sasapay_signature` field; if your application receives it through another transport, pass it explicitly to `verify($payload, signature: $value)`.
 
-Canonical callback fields include documented aliases across C2B, IPN, checkout/card, B2C, B2B, remittance, utilities, WAAS, and bulk status payloads:
+Canonical callback fields, and the aliases SasaPay uses for them across C2B, IPN, checkout/card, B2C, B2B, remittance, utilities, WAAS, and bulk status payloads:
 
 | Canonical field | Documented aliases |
 | --- | --- |
@@ -903,7 +927,7 @@ SasaPay amount fields are string-cast by default for backward compatibility. Pas
 
 | Method | Endpoint |
 | --- | --- |
-| `getAccessToken()` | `GET /oauth/v1/generate?grant_type=client_credentials` |
+| `getAccessToken()` | `GET /api/v1/auth/token/?grant_type=client_credentials` |
 
 ### SasaPay v1 Payments
 
@@ -954,7 +978,7 @@ SasaPay amount fields are string-cast by default for backward compatibility. Pas
 
 | Method | Endpoint |
 | --- | --- |
-| `getWaasAccessToken()` | `GET /oauth/v1/generate?grant_type=client_credentials` on the configured authentication host |
+| `getWaasAccessToken()` | `GET /api/v2/waas/auth/token/?grant_type=client_credentials` |
 
 ### SasaPay WAAS Onboarding and Customers
 

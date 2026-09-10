@@ -41,7 +41,7 @@ it('rejects an unknown sasapay environment without an explicit base url', functi
 
 it('requests token and sends c2b payment', function (): void {
     Http::fake([
-        'https://sandbox.sasapay.app/oauth/v1/generate*' => Http::response([
+        'https://sandbox.sasapay.app/api/v1/auth/token/*' => Http::response([
             'status' => true,
             'access_token' => 'sasapay-token',
             'expires_in' => 3600,
@@ -72,7 +72,7 @@ it('requests token and sends c2b payment', function (): void {
     expect($response['ResponseCode'])->toBe('0');
 
     Http::assertSent(function ($request): bool {
-        return $request->url() === 'https://sandbox.sasapay.app/oauth/v1/generate?grant_type=client_credentials'
+        return $request->url() === 'https://sandbox.sasapay.app/api/v1/auth/token/?grant_type=client_credentials'
             && $request->hasHeader('Authorization', 'Basic '.base64_encode('client-id:client-secret'));
     });
 
@@ -114,7 +114,7 @@ it('normalizes local Kenyan numbers in c2b payment requests', function (string $
 
 it('uses the documented production token endpoint', function (): void {
     Http::fake([
-        'https://api.sasapay.app/oauth/v1/generate*' => Http::response([
+        'https://api.sasapay.app/api/v1/auth/token/*' => Http::response([
             'access_token' => 'production-token',
             'expires_in' => 3600,
         ], 200),
@@ -128,7 +128,7 @@ it('uses the documented production token endpoint', function (): void {
 
     expect($client->getAccessToken())->toBe('production-token');
 
-    Http::assertSent(fn ($request): bool => $request->url() === 'https://api.sasapay.app/oauth/v1/generate?grant_type=client_credentials');
+    Http::assertSent(fn ($request): bool => $request->url() === 'https://api.sasapay.app/api/v1/auth/token/?grant_type=client_credentials');
 });
 
 it('supports explicit sasapay token url overrides', function (): void {
@@ -187,7 +187,7 @@ it('keeps amount stringification by default and can preserve raw numeric amounts
     $rawClient->lipaFare(['amount' => 100.50]);
 
     $requests = collect(Http::recorded())
-        ->filter(fn (array $record): bool => $record[0]->url() !== 'https://sandbox.sasapay.app/oauth/v1/generate?grant_type=client_credentials')
+        ->filter(fn (array $record): bool => $record[0]->url() !== 'https://sandbox.sasapay.app/api/v1/auth/token/?grant_type=client_credentials')
         ->values();
 
     expect($requests[0][0]->data()['Amount'])->toBe('100')
@@ -482,10 +482,53 @@ it('applies configured sasapay payment defaults without overwriting explicit val
         && ! array_key_exists('callbackUrl', $request->data()));
 });
 
+it('derives both token urls from their own base url', function (): void {
+    // https://developer.sasapay.app/docs/apis/authentication
+    // https://developer.sasapay.app/docs/apis/waas/authentication
+    // Each surface authenticates at {base_url}/auth/token/, GET, HTTP Basic, with
+    // grant_type in the query string. Rebuilding from scheme://host alone would drop
+    // the /api/v1 and /api/v2/waas prefixes and point both at a path SasaPay does not serve.
+    $resolve = (new ReflectionClass(SasaPayClient::class))->getMethod('resolveTokenUrl');
+
+    expect($resolve->invoke(null, [], SasaPayClient::SANDBOX_BASE_URL, 'token_url'))
+        ->toBe('https://sandbox.sasapay.app/api/v1/auth/token/')
+        ->and($resolve->invoke(null, [], SasaPayClient::WAAS_SANDBOX_BASE_URL, 'waas_token_url'))
+        ->toBe('https://sandbox.sasapay.app/api/v2/waas/auth/token/')
+        ->and($resolve->invoke(null, [], SasaPayClient::PRODUCTION_BASE_URL, 'token_url'))
+        ->toBe('https://api.sasapay.app/api/v1/auth/token/')
+        ->and($resolve->invoke(null, [], SasaPayClient::WAAS_PRODUCTION_BASE_URL, 'waas_token_url'))
+        ->toBe('https://api.sasapay.app/api/v2/waas/auth/token/');
+});
+
+it('does not reuse a configured v1 token url for waas', function (): void {
+    // They are different endpoints; sharing one authenticates against the wrong surface.
+    $resolve = (new ReflectionClass(SasaPayClient::class))->getMethod('resolveTokenUrl');
+
+    $config = ['token_url' => 'https://custom.example.test/api/v1/auth/token/'];
+
+    expect($resolve->invoke(null, $config, SasaPayClient::WAAS_SANDBOX_BASE_URL, 'waas_token_url'))
+        ->toBe('https://sandbox.sasapay.app/api/v2/waas/auth/token/')
+        ->and($resolve->invoke(null, $config, SasaPayClient::SANDBOX_BASE_URL, 'token_url'))
+        ->toBe('https://custom.example.test/api/v1/auth/token/');
+});
+
+it('honours an explicit waas_token_url override', function (): void {
+    $resolve = (new ReflectionClass(SasaPayClient::class))->getMethod('resolveTokenUrl');
+
+    expect($resolve->invoke(
+        null,
+        ['waas_token_url' => 'https://waas.example.test/token/'],
+        SasaPayClient::WAAS_SANDBOX_BASE_URL,
+        'waas_token_url',
+    ))->toBe('https://waas.example.test/token/');
+});
+
 it('authenticates against the documented waas token endpoint', function (): void {
     Http::fake([
-        'https://sandbox.sasapay.app/oauth/v1/generate*' => Http::response([
-            'status' => true,
+        // WAAS authenticates on its own /api/v2/waas path, not the v1 one.
+        // https://developer.sasapay.app/docs/apis/waas/authentication
+        'https://sandbox.sasapay.app/api/v2/waas/auth/token/*' => Http::response([
+            'statusCode' => 0,
             'access_token' => 'waas-token',
             'expires_in' => 3600,
             'token_type' => 'Bearer',
@@ -517,7 +560,7 @@ it('authenticates against the documented waas token endpoint', function (): void
     expect($response['responseCode'])->toBe('0');
 
     Http::assertSent(function ($request): bool {
-        return $request->url() === 'https://sandbox.sasapay.app/oauth/v1/generate?grant_type=client_credentials'
+        return $request->url() === 'https://sandbox.sasapay.app/api/v2/waas/auth/token/?grant_type=client_credentials'
             && $request->hasHeader('Authorization', 'Basic '.base64_encode('client-id:client-secret'));
     });
 
