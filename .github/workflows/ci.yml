@@ -59,6 +59,8 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: write
+    outputs:
+      name: ${{ steps.tag.outputs.name }}
 
     steps:
       - uses: actions/checkout@v6
@@ -66,7 +68,19 @@ jobs:
           fetch-depth: 0
 
       - name: Determine version bump and create tag
+        id: tag
         run: |
+          set -euo pipefail
+
+          # A re-run must not mint a second tag for a commit that already has one.
+          EXISTING=$(git tag --points-at HEAD --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n1 || true)
+
+          if [ -n "$EXISTING" ]; then
+            echo "HEAD is already tagged $EXISTING; reusing it."
+            echo "name=$EXISTING" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
           # The first public release for this package is v0.1.0. Ignore accidental
           # v0.0.x tags if they exist from earlier workflow attempts.
           LATEST_TAG=$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | grep -Ev '^v0\.0\.' | head -n1 || true)
@@ -78,6 +92,7 @@ jobs:
 
             git tag "$NEW_TAG"
             git push origin "$NEW_TAG"
+            echo "name=$NEW_TAG" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -100,6 +115,7 @@ jobs:
 
           git tag "$NEW_TAG"
           git push origin "$NEW_TAG"
+          echo "name=$NEW_TAG" >> "$GITHUB_OUTPUT"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -115,18 +131,41 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Get tag name
-        id: tag
-        run: echo "name=$(git describe --tags --abbrev=0)" >> "$GITHUB_OUTPUT"
-
+      # The tag name comes from the tag job. Re-deriving it here with
+      # `git describe` raced the tag that job had just pushed, so this step used
+      # to name the *previous* release and fail because it already existed.
       - name: Create GitHub Release
-        run: gh release create ${{ steps.tag.outputs.name }} --generate-notes
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_NAME: ${{ needs.tag.outputs.name }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "$TAG_NAME" ]; then
+            echo "The tag job produced no tag name."
+            exit 1
+          fi
+
+          # The push may not be visible to this job's remote immediately.
+          for _ in $(seq 1 10); do
+            if git ls-remote --exit-code --tags origin "refs/tags/${TAG_NAME}" >/dev/null 2>&1; then
+              break
+            fi
+            sleep 2
+          done
+
+          if gh release view "$TAG_NAME" >/dev/null 2>&1; then
+            echo "Release already exists for $TAG_NAME"
+          else
+            gh release create "$TAG_NAME" --generate-notes
+          fi
 
       - name: Update Packagist
+        env:
+          PACKAGIST_TOKEN: ${{ secrets.PACKAGIST_TOKEN }}
         run: |
-          curl -XPOST \
+          set -euo pipefail
+          curl -sS -XPOST \
             -H 'Content-Type: application/json' \
-            'https://packagist.org/api/update-package?username=thekiharani&apiToken=${{ secrets.PACKAGIST_TOKEN }}' \
+            "https://packagist.org/api/update-package?username=thekiharani&apiToken=${PACKAGIST_TOKEN}" \
             -d '{"repository":{"url":"https://github.com/thekiharani/laravel-payments"}}'
