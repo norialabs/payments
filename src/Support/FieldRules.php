@@ -4,13 +4,6 @@ namespace NoriaLabs\Payments\Support;
 
 use NoriaLabs\Payments\Exceptions\ValidationException;
 
-/**
- * Validates payloads against provider-published field constraints.
- *
- * Supported rules: `required`, `notEmpty`, `max`, `numeric`, `pattern`, `boolean`.
- * `required` checks presence only, because providers routinely require a key while
- * accepting a blank value for it.
- */
 class FieldRules
 {
     /**

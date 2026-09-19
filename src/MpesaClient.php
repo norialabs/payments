@@ -270,9 +270,6 @@ class MpesaClient
         return $this->authorizedRequest($this->endpoint('ratiba_standing_order'), $this->withAmount($payload, $options), $options);
     }
 
-    /**
-     * Registers the shortcode and callback that `pullTransactions()` then queries.
-     */
     public function registerPullTransactions(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest($this->endpoint('pull_transactions_register'), $payload, $options);

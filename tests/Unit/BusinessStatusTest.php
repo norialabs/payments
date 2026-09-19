@@ -73,7 +73,6 @@ it('falls back to a generic message when the provider sends none', function (): 
 });
 
 it('fails a buni stk reply when the gateway succeeds but safaricom rejects', function (): void {
-    // header.statusCode is the gateway's verdict, response.ResponseCode is Safaricom's.
     expect(BusinessStatus::succeeded(BusinessStatus::KCB_BUNI, [
         'header' => ['statusCode' => '0'],
         'response' => ['ResponseCode' => 1032, 'ResponseDescription' => 'Request cancelled by user'],

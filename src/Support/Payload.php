@@ -65,10 +65,6 @@ class Payload
         return $payload;
     }
 
-    /**
-     * A plain `(string)` cast on a float leaks binary rounding artefacts —
-     * `0.1 + 0.2` becomes `"0.30000000000000004"`, which providers reject.
-     */
     public static function amountToString(mixed $value): string
     {
         if (is_bool($value)) {

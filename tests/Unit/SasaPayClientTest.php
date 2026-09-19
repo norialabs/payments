@@ -483,11 +483,6 @@ it('applies configured sasapay payment defaults without overwriting explicit val
 });
 
 it('derives both token urls from their own base url', function (): void {
-    // https://developer.sasapay.app/docs/apis/authentication
-    // https://developer.sasapay.app/docs/apis/waas/authentication
-    // Each surface authenticates at {base_url}/auth/token/, GET, HTTP Basic, with
-    // grant_type in the query string. Rebuilding from scheme://host alone would drop
-    // the /api/v1 and /api/v2/waas prefixes and point both at a path SasaPay does not serve.
     $resolve = (new ReflectionClass(SasaPayClient::class))->getMethod('resolveTokenUrl');
 
     expect($resolve->invoke(null, [], SasaPayClient::SANDBOX_BASE_URL, 'token_url'))
@@ -501,7 +496,6 @@ it('derives both token urls from their own base url', function (): void {
 });
 
 it('does not reuse a configured v1 token url for waas', function (): void {
-    // They are different endpoints; sharing one authenticates against the wrong surface.
     $resolve = (new ReflectionClass(SasaPayClient::class))->getMethod('resolveTokenUrl');
 
     $config = ['token_url' => 'https://custom.example.test/api/v1/auth/token/'];
@@ -525,8 +519,6 @@ it('honours an explicit waas_token_url override', function (): void {
 
 it('authenticates against the documented waas token endpoint', function (): void {
     Http::fake([
-        // WAAS authenticates on its own /api/v2/waas path, not the v1 one.
-        // https://developer.sasapay.app/docs/apis/waas/authentication
         'https://sandbox.sasapay.app/api/v2/waas/auth/token/*' => Http::response([
             'statusCode' => 0,
             'access_token' => 'waas-token',

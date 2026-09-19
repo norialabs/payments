@@ -18,11 +18,6 @@ use NoriaLabs\Payments\Support\RetryPolicy;
 
 class KcbBuniClient
 {
-    /**
-     * `uat` is published on the Buni DevPortal. `production` is NOT published by
-     * KCB — it was established by probing the live gateway. Confirm it with KCB
-     * before moving real money, or set `base_url` explicitly.
-     */
     public const BASE_URLS = [
         'uat' => 'https://uat.buni.kcbgroup.com',
         'production' => 'https://api.buni.kcbgroup.com',
@@ -40,10 +35,6 @@ class KcbBuniClient
         'p2p_transfer_status_inquiry' => '/kcb/bi/ips/p2p/transfer/status/inquiry/1.0.0/{path}',
     ];
 
-    /**
-     * From the `MpesaExpressAPIService` OpenAPI document. All eight fields are
-     * required, but the short-code pair may be blank when `sharedShortCode` is true.
-     */
     public const MPESA_STK_PUSH_RULES = [
         'phoneNumber' => ['required' => true, 'notEmpty' => true, 'max' => 12, 'pattern' => '/^254\d{9}$/', 'format' => '2547XXXXXXXX'],
         'amount' => ['required' => true, 'max' => 18, 'numeric' => true],
@@ -61,9 +52,6 @@ class KcbBuniClient
         'messageId' => ['required' => true, 'notEmpty' => true, 'max' => 32],
     ];
 
-    /**
-     * From the `FundsTransferAPIService` OpenAPI document.
-     */
     public const FUNDS_TRANSFER_RULES = [
         'companyCode' => ['required' => true, 'notEmpty' => true, 'max' => 15],
         'transactionType' => ['required' => true, 'notEmpty' => true, 'max' => 2],
@@ -125,11 +113,6 @@ class KcbBuniClient
         return $this->tokens->getAccessToken($forceRefresh);
     }
 
-    /**
-     * The payload's `callbackUrl` receives a Daraja-shaped STK result, not an
-     * Instant Payment Notification. It is unsigned, so `VerifyKcbBuniIpn` must
-     * not be applied to that route.
-     */
     public function mpesaStkPush(
         array $payload,
         string $messageId,
@@ -259,10 +242,6 @@ class KcbBuniClient
         );
     }
 
-    /**
-     * `KCBKEeTIMSKraServices` publishes a wildcard resource with no schema, so the
-     * operation path and body come from the KRA integration pack KCB issues.
-     */
     public function etimsRequest(
         string $path,
         array $payload = [],
@@ -282,10 +261,6 @@ class KcbBuniClient
         );
     }
 
-    /**
-     * `KCBBIIpsP2PTransferStatusInquiry` is a wildcard POST resource, and is not
-     * deployed on the UAT gateway.
-     */
     public function p2pTransferStatusInquiry(
         array $payload,
         string $path = '',

@@ -222,7 +222,6 @@ class HttpTransport
             $request = $request->withHeaders(['Content-Type' => 'application/json']);
         }
 
-        // An empty array encodes as `[]`, which providers expecting an object reject.
         if ($body === []) {
             $body = new \stdClass;
         }

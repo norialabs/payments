@@ -378,7 +378,6 @@ it('validates the documented mpesa express constraints before sending', function
     expect(fn () => $client->mpesaStkPush($missing, 'MSG1'))
         ->toThrow(ValidationException::class, '[orgPassKey] is required.');
 
-    // messageId travels as a header, not a body field.
     expect(fn () => $client->mpesaStkPush($valid, str_repeat('m', 33)))
         ->toThrow(ValidationException::class, '[messageId] must not exceed 32 characters');
 });
@@ -412,7 +411,6 @@ it('validates the documented funds transfer constraints before sending', functio
     expect(fn () => $client->transferFunds(array_replace($valid, ['debitAmount' => 'ten'])))
         ->toThrow(ValidationException::class, '[debitAmount] must be numeric.');
 
-    // debitAmount stays a JSON number: only `amount`/`Amount` are stringified.
     Http::assertSent(fn ($request): bool => ($request->data()['debitAmount'] ?? null) === 10);
 });
 
@@ -470,7 +468,6 @@ it('detects buni business failures returned with http 200', function (): void {
         'validate_payloads' => false,
     ];
 
-    // Default: the failure body is returned, not thrown.
     $lenient = KcbBuniClient::make(Http::getFacadeRoot(), $config, kcbBuniTokenProvider('t'));
     expect($lenient->transferFunds(['transactionReference' => 'X']))->toBe($failure);
 

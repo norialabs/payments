@@ -35,8 +35,6 @@ class ClientCredentialsTokenProvider implements AccessTokenProvider
     ) {}
 
     /**
-     * Build a (possibly cache-decorated) token provider from a normalized client config.
-     *
      * @param  array<string, mixed>  $config
      */
     public static function forConfig(
