@@ -1,4 +1,7 @@
-# Laravel Payments
+# norialabs/payments
+
+[![CI](https://github.com/norialabs/payments/actions/workflows/ci.yml/badge.svg)](https://github.com/norialabs/payments/actions/workflows/ci.yml)
+[![Packagist](https://img.shields.io/packagist/v/norialabs/payments)](https://packagist.org/packages/norialabs/payments)
 
 Laravel package for payment providers:
 
@@ -20,7 +23,7 @@ It does not persist transactions, define your application callback controllers, 
 ## Installation
 
 ```bash
-composer require thekiharani/laravel-payments
+composer require norialabs/payments
 ```
 
 The service provider is auto-discovered. Publish the config:

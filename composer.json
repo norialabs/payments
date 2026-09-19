@@ -1,5 +1,5 @@
 {
-  "name": "thekiharani/laravel-payments",
+  "name": "norialabs/payments",
   "description": "Laravel SDK for payment integrations: M-PESA Daraja, SasaPay, KCB Buni, and Paystack.",
   "keywords": [
     "laravel",
