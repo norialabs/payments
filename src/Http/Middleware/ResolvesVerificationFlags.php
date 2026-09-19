@@ -4,10 +4,6 @@ namespace NoriaLabs\Payments\Http\Middleware;
 
 use NoriaLabs\Payments\Exceptions\ConfigurationException;
 
-/**
- * Parses the per-route middleware parameters that relax a check the provider does
- * not apply on that route, e.g. `->middleware('kcb-buni.ipn:no-signature')`.
- */
 trait ResolvesVerificationFlags
 {
     /**

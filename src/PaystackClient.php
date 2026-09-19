@@ -356,11 +356,6 @@ class PaystackClient
         return $this->sendAuthorized('check_pending_charge', ['reference' => $reference], options: $options);
     }
 
-    /**
-     * Paystack authorises this endpoint with your PUBLIC key, not the secret key.
-     * Pass it here, configure `payments.paystack.public_key`, or set `access_token`
-     * in `$options`.
-     */
     public function requeryCapitecPayCharge(
         string|int $reference,
         ?string $publicKey = null,
@@ -369,7 +364,6 @@ class PaystackClient
         $publicKey ??= $this->publicKey;
         $resolved = RequestOptions::fromArray($options);
 
-        // An explicit access_token in $options always wins.
         if ($publicKey !== null && $resolved->accessToken === null) {
             $options = new RequestOptions(
                 headers: $resolved->headers,

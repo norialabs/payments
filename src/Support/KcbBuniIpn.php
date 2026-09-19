@@ -2,12 +2,6 @@
 
 namespace NoriaLabs\Payments\Support;
 
-/**
- * Readers and response builders for the three inbound contracts of Buni's
- * `InstantPaymentNotification` API: `/till-notification` (nested envelope,
- * signed), `/account-notification` (flat envelope, signed) and `/validation`
- * (unsigned).
- */
 class KcbBuniIpn
 {
     public const TYPE_TILL = 'till';

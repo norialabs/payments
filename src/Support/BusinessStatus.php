@@ -4,12 +4,6 @@ namespace NoriaLabs\Payments\Support;
 
 use NoriaLabs\Payments\Exceptions\BusinessException;
 
-/**
- * Reads the business outcome every provider reports inside an HTTP 200 body.
- *
- * `succeeded()` returns null when no known status marker is present, so an
- * unrecognised response shape is never treated as a failure.
- */
 class BusinessStatus
 {
     public const KCB_BUNI = 'kcb_buni';
@@ -114,10 +108,6 @@ class BusinessStatus
     }
 
     /**
-     * A Buni M-PESA Express reply carries two independent verdicts:
-     * `header.statusCode` is the gateway's and `response.ResponseCode` is
-     * Safaricom's, so when both are present both must be zero.
-     *
      * @param  array<string, mixed>  $body
      */
     private static function kcbBuni(array $body): ?bool

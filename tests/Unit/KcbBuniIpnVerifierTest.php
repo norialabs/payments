@@ -136,7 +136,6 @@ it('supports per-route middleware options for the unsigned validation endpoint',
     [$privateKey, $publicKey] = kcbBuniKeyPair();
     config()->set('payments.kcb_buni.ipn_security.public_key', $publicKey);
 
-    // /validation is the one route KCB sends without a Signature header.
     Route::post('/kcb-buni/ipn/account', fn () => response('ok'))
         ->middleware(VerifyKcbBuniIpn::class);
     Route::post('/kcb-buni/ipn/validation', fn () => response('ok'))

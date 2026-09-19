@@ -20,22 +20,10 @@ class SasaPayClient
 
     public const WAAS_SANDBOX_BASE_URL = 'https://sandbox.sasapay.app/api/v2/waas';
 
-    /**
-     * SasaPay documents the sandbox hosts only. These were established by probing
-     * the live hosts; override with `base_url` / `waas_base_url` if SasaPay issues
-     * your production application a different host.
-     */
     public const PRODUCTION_BASE_URL = 'https://api.sasapay.app/api/v1';
 
     public const WAAS_PRODUCTION_BASE_URL = 'https://api.sasapay.app/api/v2/waas';
 
-    /**
-     * Both surfaces authenticate at `{base_url}/auth/token/`, GET, HTTP Basic, with
-     * `grant_type` in the query string.
-     *
-     * @see https://developer.sasapay.app/docs/apis/authentication
-     * @see https://developer.sasapay.app/docs/apis/waas/authentication
-     */
     public const TOKEN_PATH = '/auth/token/';
 
     public const ENDPOINTS = [
@@ -873,15 +861,6 @@ class SasaPayClient
         );
     }
 
-    /**
-     * The token path hangs off the whole base URL, including its `/api/v1` or
-     * `/api/v2/waas` prefix. Rebuilding from `scheme://host` alone would drop that
-     * prefix and point both surfaces at a path SasaPay does not serve.
-     *
-     * `waas_token_url` deliberately does not fall back to `token_url`: the two are
-     * different endpoints, so reusing a configured v1 URL for WAAS would authenticate
-     * against the wrong surface.
-     */
     private static function resolveTokenUrl(array $config, string $baseUrl, string $key = 'token_url'): string
     {
         $configured = $config[$key] ?? null;

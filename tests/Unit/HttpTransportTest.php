@@ -345,7 +345,6 @@ it('respects a numeric Retry-After header', function (): void {
         },
     ));
 
-    // Retry-After: 0 → no sleep call (early return when delay is zero or negative).
     expect($result)->toBe(['ok' => true])
         ->and($sleeps)->toBe([]);
 });

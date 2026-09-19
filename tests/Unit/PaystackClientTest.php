@@ -415,7 +415,6 @@ it('authorizes the capitec pay requery with the public key rather than the secre
     $configured->requeryCapitecPayCharge('ref_123', 'pk_test_explicit');
     $configured->requeryCapitecPayCharge('ref_123', options: new RequestOptions(accessToken: 'pk_test_option'));
 
-    // No public key anywhere falls back to the normal token provider.
     paystackClient()->requeryCapitecPayCharge('ref_123');
 
     $authorizations = collect(Http::recorded())

@@ -4,7 +4,6 @@ use NoriaLabs\Payments\Exceptions\ValidationException;
 use NoriaLabs\Payments\Support\FieldRules;
 
 it('treats a present but blank value as satisfying required', function (): void {
-    // KCB Buni requires orgPassKey but accepts a blank value on a shared short code.
     expect(FieldRules::validate(['orgPassKey' => ''], ['orgPassKey' => ['required' => true]]))->toBe([]);
 
     expect(FieldRules::validate([], ['orgPassKey' => ['required' => true]]))
