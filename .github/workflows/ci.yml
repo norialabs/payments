@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main, release]
+    branches: [main]
   pull_request:
-    branches: [main, release]
+    branches: [main]
 
 jobs:
   test:
@@ -55,7 +55,7 @@ jobs:
 
   tag:
     needs: verify
-    if: github.event_name == 'push' && github.ref == 'refs/heads/release'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -171,7 +171,7 @@ jobs:
 
   release:
     needs: [verify, tag]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/release' && needs.tag.result == 'success'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.tag.result == 'success'
     runs-on: ubuntu-24.04
     permissions:
       contents: write
