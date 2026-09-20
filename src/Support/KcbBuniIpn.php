@@ -36,9 +36,10 @@ class KcbBuniIpn
      */
     public static function tillNotificationData(array $payload): array
     {
-        $data = $payload['requestPayload']['additionalData']['notificationData'] ?? [];
+        $request = Setting::map($payload['requestPayload'] ?? null);
+        $additional = Setting::map($request['additionalData'] ?? null);
 
-        return is_array($data) ? $data : [];
+        return Setting::map($additional['notificationData'] ?? null);
     }
 
     /**
@@ -47,9 +48,9 @@ class KcbBuniIpn
      */
     public static function tillPrimaryData(array $payload): array
     {
-        $data = $payload['requestPayload']['primaryData'] ?? [];
+        $request = Setting::map($payload['requestPayload'] ?? null);
 
-        return is_array($data) ? $data : [];
+        return Setting::map($request['primaryData'] ?? null);
     }
 
     /**
@@ -66,8 +67,8 @@ class KcbBuniIpn
 
         return [
             'header' => [
-                'messageID' => (string) ($header['messageID'] ?? ''),
-                'originatorConversationID' => (string) ($header['originatorConversationID'] ?? ''),
+                'messageID' => Setting::string($header['messageID'] ?? null),
+                'originatorConversationID' => Setting::string($header['originatorConversationID'] ?? null),
                 'statusCode' => $statusCode,
                 'statusMessage' => $statusMessage,
             ],

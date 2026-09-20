@@ -55,14 +55,14 @@ class ClientCredentialsTokenProvider implements AccessTokenProvider
             throw new ConfigurationException($missingCredentialsMessage);
         }
 
-        $skew = (int) ($config[$cacheSkewKey] ?? $config['token_cache_skew_seconds'] ?? 60);
+        $skew = Setting::int($config[$cacheSkewKey] ?? $config['token_cache_skew_seconds'] ?? null, 60);
 
         $provider = new self(
             http: $httpFactory,
             tokenUrl: $tokenUrl,
-            clientId: (string) $clientId,
-            clientSecret: (string) $clientSecret,
-            timeoutSeconds: isset($config['timeout_seconds']) ? (float) $config['timeout_seconds'] : null,
+            clientId: Setting::string($clientId),
+            clientSecret: Setting::string($clientSecret),
+            timeoutSeconds: Setting::float($config['timeout_seconds'] ?? null),
             query: ['grant_type' => 'client_credentials'],
             cacheSkewSeconds: $skew,
         );
@@ -75,14 +75,14 @@ class ClientCredentialsTokenProvider implements AccessTokenProvider
 
         $repository = $cacheStore === true || $cacheStore === '' || $cacheStore === 'default'
             ? $cacheFactory->store()
-            : $cacheFactory->store((string) $cacheStore);
+            : $cacheFactory->store(Setting::string($cacheStore));
 
         return new CachedAccessTokenProvider(
             inner: $provider,
             cache: $repository,
             cacheKey: $cacheKey,
             cacheSkewSeconds: $skew,
-            cacheTtlSeconds: isset($config['cache_ttl_seconds']) ? (int) $config['cache_ttl_seconds'] : null,
+            cacheTtlSeconds: Setting::int($config['cache_ttl_seconds'] ?? 0) ?: null,
         );
     }
 
@@ -143,16 +143,18 @@ class ClientCredentialsTokenProvider implements AccessTokenProvider
         }
 
         $mapper = $this->mapResponse ?? function (array $input): AccessToken {
+            $input = Setting::map($input);
+
             return new AccessToken(
-                accessToken: (string) ($input['access_token'] ?? ''),
-                expiresIn: (int) ($input['expires_in'] ?? 0),
-                tokenType: isset($input['token_type']) ? (string) $input['token_type'] : null,
-                scope: isset($input['scope']) ? (string) $input['scope'] : null,
+                accessToken: Setting::string($input['access_token'] ?? null),
+                expiresIn: Setting::int($input['expires_in'] ?? null),
+                tokenType: isset($input['token_type']) ? Setting::string($input['token_type']) : null,
+                scope: isset($input['scope']) ? Setting::string($input['scope']) : null,
                 raw: $input,
             );
         };
 
-        $token = $mapper($payload);
+        $token = $mapper(Setting::map($payload));
         $this->cachedToken = $token;
         $this->expiresAt = time() + max(0, $token->expiresIn - $this->cacheSkewSeconds);
 

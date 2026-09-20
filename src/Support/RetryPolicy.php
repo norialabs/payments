@@ -22,28 +22,60 @@ class RetryPolicy
         public readonly mixed $sleeper = null,
     ) {}
 
-    public static function fromArray(array|self|null|false $value): ?self
+    public static function fromArray(mixed $value): ?self
     {
-        if ($value === false || $value === null) {
-            return null;
-        }
-
         if ($value instanceof self) {
             return $value;
         }
 
+        if (! is_array($value)) {
+            return null;
+        }
+
         return new self(
-            maxAttempts: (int) ($value['max_attempts'] ?? 1),
-            retryMethods: array_values($value['retry_methods'] ?? []),
-            retryOnStatuses: array_values($value['retry_on_statuses'] ?? []),
+            maxAttempts: Setting::int($value['max_attempts'] ?? null, 1),
+            retryMethods: self::strings($value['retry_methods'] ?? null),
+            retryOnStatuses: self::ints($value['retry_on_statuses'] ?? null),
             retryOnNetworkError: (bool) ($value['retry_on_network_error'] ?? false),
-            baseDelaySeconds: (float) ($value['base_delay_seconds'] ?? 0.0),
-            maxDelaySeconds: (float) ($value['max_delay_seconds'] ?? 60.0),
-            backoffMultiplier: (float) ($value['backoff_multiplier'] ?? 2.0),
-            jitterSeconds: (float) ($value['jitter_seconds'] ?? 0.0),
+            baseDelaySeconds: Setting::float($value['base_delay_seconds'] ?? null, 0.0) ?? 0.0,
+            maxDelaySeconds: Setting::float($value['max_delay_seconds'] ?? null, 60.0) ?? 60.0,
+            backoffMultiplier: Setting::float($value['backoff_multiplier'] ?? null, 2.0) ?? 2.0,
+            jitterSeconds: Setting::float($value['jitter_seconds'] ?? null, 0.0) ?? 0.0,
             respectRetryAfter: (bool) ($value['respect_retry_after'] ?? true),
             shouldRetry: $value['should_retry'] ?? null,
             sleeper: $value['sleeper'] ?? null,
         );
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private static function strings(mixed $value): array
+    {
+        $out = [];
+
+        foreach (is_array($value) ? $value : [] as $entry) {
+            if (is_scalar($entry)) {
+                $out[] = (string) $entry;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * @return array<int, int>
+     */
+    private static function ints(mixed $value): array
+    {
+        $out = [];
+
+        foreach (is_array($value) ? $value : [] as $entry) {
+            if (is_numeric($entry)) {
+                $out[] = (int) $entry;
+            }
+        }
+
+        return $out;
     }
 }

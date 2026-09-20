@@ -4,6 +4,7 @@ namespace NoriaLabs\Payments;
 
 use Illuminate\Http\Request;
 use NoriaLabs\Payments\Exceptions\ConfigurationException;
+use NoriaLabs\Payments\Support\Setting;
 use Symfony\Component\HttpFoundation\IpUtils;
 
 class KcbBuniIpnVerifier
@@ -18,6 +19,9 @@ class KcbBuniIpnVerifier
         private readonly bool $verifySignature = true,
     ) {}
 
+    /**
+     * @param  array<string, mixed>  $config
+     */
     public static function make(array $config = []): self
     {
         $ipnConfig = (array) ($config['ipn_security'] ?? []);
@@ -141,7 +145,7 @@ class KcbBuniIpnVerifier
         }
 
         return array_values(array_filter(array_map(
-            static fn (mixed $ip): string => trim((string) $ip),
+            static fn (mixed $ip): string => trim(Setting::string($ip)),
             is_array($value) ? $value : [],
         )));
     }
@@ -152,7 +156,7 @@ class KcbBuniIpnVerifier
             return null;
         }
 
-        $value = trim(str_replace('\\n', "\n", (string) $value));
+        $value = trim(str_replace('\\n', "\n", Setting::string($value)));
 
         return $value === '' ? null : $value;
     }

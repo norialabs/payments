@@ -13,6 +13,7 @@ use NoriaLabs\Payments\Support\HttpTransport;
 use NoriaLabs\Payments\Support\Payload;
 use NoriaLabs\Payments\Support\RequestOptions;
 use NoriaLabs\Payments\Support\RetryPolicy;
+use NoriaLabs\Payments\Support\Setting;
 
 class SasaPayClient
 {
@@ -93,6 +94,8 @@ class SasaPayClient
     /**
      * @param  array<string, string>  $endpoints
      * @param  array<string, string>  $waasEndpoints
+     * @param  array<string, mixed>  $paymentDefaults
+     * @param  array<string, mixed>  $waasPaymentDefaults
      */
     public function __construct(
         private readonly HttpTransport $http,
@@ -107,6 +110,9 @@ class SasaPayClient
         private readonly bool $throwOnBusinessError = false,
     ) {}
 
+    /**
+     * @param  array<string, mixed>  $config
+     */
     public static function make(
         Factory $httpFactory,
         array $config = [],
@@ -121,7 +127,7 @@ class SasaPayClient
         $transport = new HttpTransport(
             http: $httpFactory,
             baseUrl: $baseUrl,
-            timeoutSeconds: isset($config['timeout_seconds']) ? (float) $config['timeout_seconds'] : null,
+            timeoutSeconds: Setting::float($config['timeout_seconds'] ?? null),
             defaultHeaders: $defaultHeaders,
             retry: RetryPolicy::fromArray($config['retry'] ?? null),
             hooks: $hooks,
@@ -137,13 +143,13 @@ class SasaPayClient
             secretKey: 'client_secret',
             missingCredentialsMessage: 'SasaPayClient requires either client_id and client_secret, or a custom token provider.',
             cacheFactory: $cacheFactory,
-            cacheKey: self::tokenCacheKey('v1', $config, $tokenUrl, (string) ($config['client_id'] ?? '')),
+            cacheKey: self::tokenCacheKey('v1', $config, $tokenUrl, Setting::string($config['client_id'] ?? null, '')),
         );
 
         $waasTransport = $waasBaseUrl === null ? null : new HttpTransport(
             http: $httpFactory,
             baseUrl: $waasBaseUrl,
-            timeoutSeconds: isset($config['timeout_seconds']) ? (float) $config['timeout_seconds'] : null,
+            timeoutSeconds: Setting::float($config['timeout_seconds'] ?? null),
             defaultHeaders: $defaultHeaders,
             retry: RetryPolicy::fromArray($config['retry'] ?? null),
             hooks: $hooks,
@@ -192,6 +198,10 @@ class SasaPayClient
         return $this->ensureWaasTokens()->getAccessToken($forceRefresh);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function requestPayment(array $payload, array|RequestOptions|null $options = null): mixed
     {
         $payload = Payload::normalizeKenyanPhoneNumbers($payload, ['PhoneNumber']);
@@ -203,11 +213,19 @@ class SasaPayClient
         );
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function processPayment(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest($this->endpoint('process_payment'), $payload, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function b2cPayment(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest(
@@ -217,6 +235,10 @@ class SasaPayClient
         );
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function b2bPayment(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest(
@@ -226,6 +248,10 @@ class SasaPayClient
         );
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function cardPayment(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest(
@@ -235,6 +261,10 @@ class SasaPayClient
         );
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function preApprovedPayment(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest(
@@ -244,6 +274,10 @@ class SasaPayClient
         );
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function remittancePayment(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest(
@@ -253,36 +287,63 @@ class SasaPayClient
         );
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function accountValidation(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest($this->endpoint('account_validation'), $payload, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function internalFundMovement(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest($this->endpoint('internal_fund_movement'), $payload, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function transactionStatus(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest($this->endpoint('transaction_status'), $payload, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function transactionStatusQuery(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest($this->endpoint('transaction_status_query'), $payload, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function transactionStatusExact(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest($this->endpoint('transaction_status_exact'), $payload, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function requestPaymentStatus(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest($this->endpoint('request_payment_status'), $payload, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     */
     public function merchantBalance(string|int $merchantCode, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedGet($this->endpoint('merchant_balance'), [
@@ -290,21 +351,37 @@ class SasaPayClient
         ], $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function verifyTransaction(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest($this->endpoint('verify_transaction'), $payload, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function businessToBeneficiary(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest($this->endpoint('business_to_beneficiary'), $this->withAmount($payload, $options), $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function registerIpnUrl(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest($this->endpoint('register_ipn_url'), $payload, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function lipaFare(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest(
@@ -314,46 +391,78 @@ class SasaPayClient
         );
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $query
+     */
     public function transactions(array $query, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedGet($this->endpoint('transactions'), $query, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     */
     public function channelCodes(array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedGet($this->endpoint('channel_codes'), options: $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function utilityPayment(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest($this->endpoint('utility_payment'), $payload, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function utilityBillQuery(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest($this->endpoint('utility_bill_query'), $payload, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function bulkPayment(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest($this->endpoint('bulk_payment'), $payload, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function bulkPaymentStatus(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest($this->endpoint('bulk_payment_status'), $payload, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     */
     public function dealerBusinessTypes(array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedGet($this->endpoint('dealer_business_types'), options: $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     */
     public function dealerCountries(array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedGet($this->endpoint('dealer_countries'), options: $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     */
     public function dealerSubCounties(string|int $countyId, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedGet($this->endpoint('dealer_sub_counties'), [
@@ -361,21 +470,36 @@ class SasaPayClient
         ], $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     */
     public function dealerIndustries(array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedGet($this->endpoint('dealer_industries'), options: $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $query
+     */
     public function availableBillNumber(array $query = [], array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedGet($this->endpoint('available_bill_number'), $query, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function merchantOnboarding(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest($this->endpoint('merchant_onboarding'), $payload, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function waasPersonalOnboarding(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->waasAuthorizedRequest(
@@ -385,6 +509,10 @@ class SasaPayClient
         );
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function waasConfirmPersonalOnboarding(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->waasAuthorizedRequest(
@@ -394,6 +522,11 @@ class SasaPayClient
         );
     }
 
+    /**
+     * @param  array<string, mixed>  $files
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function waasPersonalKyc(
         array $payload,
         array|RequestOptions|null $files = [],
@@ -409,6 +542,10 @@ class SasaPayClient
         return $this->waasAuthorizedMultipartPost($this->waasEndpoint('personal_kyc'), $payload, $resolvedFiles, $resolvedOptions);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function waasBusinessOnboarding(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->waasAuthorizedRequest(
@@ -418,6 +555,10 @@ class SasaPayClient
         );
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function waasConfirmBusinessOnboarding(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->waasAuthorizedRequest(
@@ -427,6 +568,11 @@ class SasaPayClient
         );
     }
 
+    /**
+     * @param  array<string, mixed>  $files
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function waasBusinessKyc(
         array $payload,
         array|RequestOptions|null $files = [],
@@ -442,21 +588,37 @@ class SasaPayClient
         return $this->waasAuthorizedMultipartPost($this->waasEndpoint('business_kyc'), $payload, $resolvedFiles, $resolvedOptions);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $query
+     */
     public function waasCustomers(array $query, array|RequestOptions|null $options = null): mixed
     {
         return $this->waasAuthorizedGet($this->waasEndpoint('customers'), $query, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function waasCustomerDetails(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->waasAuthorizedRequest($this->waasEndpoint('customer_details'), $payload, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function waasUpdateCustomerDetails(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->waasAuthorizedRequest($this->waasEndpoint('customer_details_update'), $payload, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function waasRequestPayment(array $payload, array|RequestOptions|null $options = null): mixed
     {
         $payload = Payload::normalizeKenyanPhoneNumbers($payload, ['mobileNumber']);
@@ -464,56 +626,99 @@ class SasaPayClient
         return $this->waasAuthorizedRequest($this->waasEndpoint('request_payment'), $this->withWaasPaymentDefaults($payload), $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function waasProcessPayment(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->waasAuthorizedRequest($this->waasEndpoint('process_payment'), $payload, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function waasMerchantTransfer(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->waasAuthorizedRequest($this->waasEndpoint('merchant_transfers'), $this->withWaasPaymentDefaults($payload), $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function waasSendMoney(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->waasAuthorizedRequest($this->waasEndpoint('send_money'), $this->withWaasPaymentDefaults($payload), $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function waasPayBill(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->waasAuthorizedRequest($this->waasEndpoint('pay_bills'), $this->withWaasPaymentDefaults($payload), $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function waasBulkPayment(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->bulkPayment($payload, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function waasBulkPaymentStatus(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->bulkPaymentStatus($payload, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function waasCreateSubWallet(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->waasAuthorizedRequest($this->waasEndpoint('create_sub_wallet'), $payload, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $query
+     */
     public function waasTransactions(array $query, array|RequestOptions|null $options = null): mixed
     {
         return $this->waasAuthorizedGet($this->waasEndpoint('transactions'), $query, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function waasTransactionStatus(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->waasAuthorizedRequest($this->waasEndpoint('transaction_status'), $payload, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function waasVerifyTransaction(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->waasAuthorizedRequest($this->waasEndpoint('verify_transaction'), $payload, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     */
     public function waasMerchantBalance(string|int $merchantCode, array|RequestOptions|null $options = null): mixed
     {
         return $this->waasAuthorizedGet($this->waasEndpoint('merchant_balance'), [
@@ -521,16 +726,25 @@ class SasaPayClient
         ], $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     */
     public function waasChannelCodes(array|RequestOptions|null $options = null): mixed
     {
         return $this->waasAuthorizedGet($this->waasEndpoint('channel_codes'), options: $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     */
     public function waasCountries(array|RequestOptions|null $options = null): mixed
     {
         return $this->waasAuthorizedGet($this->waasEndpoint('countries'), options: $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     */
     public function waasCountrySubRegions(string|int $callingCode, array|RequestOptions|null $options = null): mixed
     {
         return $this->waasAuthorizedGet($this->waasEndpoint('country_sub_regions'), [
@@ -538,11 +752,17 @@ class SasaPayClient
         ], $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     */
     public function waasIndustries(array|RequestOptions|null $options = null): mixed
     {
         return $this->waasAuthorizedGet($this->waasEndpoint('industries'), options: $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     */
     public function waasSubIndustries(string|int $industryId, array|RequestOptions|null $options = null): mixed
     {
         return $this->waasAuthorizedGet($this->waasEndpoint('sub_industries'), [
@@ -550,16 +770,25 @@ class SasaPayClient
         ], $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     */
     public function waasBusinessTypes(array|RequestOptions|null $options = null): mixed
     {
         return $this->waasAuthorizedGet($this->waasEndpoint('business_types'), options: $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     */
     public function waasProducts(array|RequestOptions|null $options = null): mixed
     {
         return $this->waasAuthorizedGet($this->waasEndpoint('products'), options: $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     */
     public function waasNearestAgents(string|float $longitude, string|float $latitude, array|RequestOptions|null $options = null): mixed
     {
         return $this->waasAuthorizedGet($this->waasEndpoint('nearest_agents'), [
@@ -568,21 +797,37 @@ class SasaPayClient
         ], $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function waasUtilityPayment(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->waasAuthorizedRequest($this->waasEndpoint('utility_payment'), $payload, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function waasUtilityBillQuery(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->utilityBillQuery($payload, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function authorizedPost(string $path, array $payload = [], array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest($path, $payload, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $query
+     */
     public function authorizedGet(
         string $path,
         array $query = [],
@@ -591,6 +836,11 @@ class SasaPayClient
         return $this->sendAuthorized($this->http, $this->tokens, $path, 'GET', null, $query, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $fields
+     * @param  array<string, mixed>  $files
+     * @param  array<string, mixed>  $options
+     */
     public function authorizedMultipartPost(
         string $path,
         array $fields = [],
@@ -600,11 +850,19 @@ class SasaPayClient
         return $this->sendAuthorizedMultipart($this->http, $this->tokens, $path, $fields, $files, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function waasAuthorizedPost(string $path, array $payload = [], array|RequestOptions|null $options = null): mixed
     {
         return $this->waasAuthorizedRequest($path, $payload, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $query
+     */
     public function waasAuthorizedGet(
         string $path,
         array $query = [],
@@ -613,6 +871,11 @@ class SasaPayClient
         return $this->sendAuthorized($this->ensureWaasHttp(), $this->ensureWaasTokens(), $path, 'GET', null, $query, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $fields
+     * @param  array<string, mixed>  $files
+     * @param  array<string, mixed>  $options
+     */
     public function waasAuthorizedMultipartPost(
         string $path,
         array $fields = [],
@@ -622,16 +885,29 @@ class SasaPayClient
         return $this->sendAuthorizedMultipart($this->ensureWaasHttp(), $this->ensureWaasTokens(), $path, $fields, $files, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     private function authorizedRequest(string $path, array $payload, array|RequestOptions|null $options): mixed
     {
         return $this->sendAuthorized($this->http, $this->tokens, $path, 'POST', $payload, null, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     private function waasAuthorizedRequest(string $path, array $payload, array|RequestOptions|null $options): mixed
     {
         return $this->sendAuthorized($this->ensureWaasHttp(), $this->ensureWaasTokens(), $path, 'POST', $payload, null, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     * @param  array<string, mixed>  $query
+     */
     private function sendAuthorized(
         HttpTransport $transport,
         AccessTokenProvider $tokens,
@@ -654,7 +930,7 @@ class SasaPayClient
                 path: $path,
                 method: $method,
                 headers: $headers,
-                query: $query,
+                query: Setting::query($query),
                 body: $payload,
                 timeoutSeconds: $requestOptions->timeoutSeconds,
                 retry: $requestOptions->retry,
@@ -664,6 +940,11 @@ class SasaPayClient
         );
     }
 
+    /**
+     * @param  array<string, mixed>  $fields
+     * @param  array<string, mixed>  $files
+     * @param  array<string, mixed>  $options
+     */
     private function sendAuthorizedMultipart(
         HttpTransport $transport,
         AccessTokenProvider $tokens,
@@ -704,6 +985,11 @@ class SasaPayClient
         return $response;
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
     private function withAmount(array $payload, array|RequestOptions|null $options): array
     {
         $requestOptions = RequestOptions::fromArray($options);
@@ -711,6 +997,10 @@ class SasaPayClient
         return Payload::normalizeAmount($payload, $requestOptions->amountNormalization ?? $this->amountNormalization);
     }
 
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
     private function withPaymentDefaults(array $payload): array
     {
         return $this->withDefaults($payload, $this->paymentDefaults);
@@ -718,12 +1008,19 @@ class SasaPayClient
 
     /**
      * @param  array<int, string>  $except
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
      */
     private function withWaasPaymentDefaults(array $payload, array $except = []): array
     {
         return $this->withDefaults($payload, array_diff_key($this->waasPaymentDefaults, array_flip($except)));
     }
 
+    /**
+     * @param  array<string, mixed>  $defaults
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
     private function withDefaults(array $payload, array $defaults): array
     {
         foreach ($defaults as $key => $value) {
@@ -736,7 +1033,9 @@ class SasaPayClient
     }
 
     /**
-     * @return array{0: array, 1: array|RequestOptions|null}
+     * @param  array<string, mixed>  $files
+     * @param  array<string, mixed>  $options
+     * @return array{0: array<string, mixed>, 1: array<string, mixed>|RequestOptions|null}
      */
     private function resolveFilesAndOptions(
         array|RequestOptions|null $files,
@@ -753,6 +1052,9 @@ class SasaPayClient
         return [$files, $options];
     }
 
+    /**
+     * @param  array<string, mixed>  $value
+     */
     private function looksLikeRequestOptions(array $value): bool
     {
         foreach (['headers', 'timeout_seconds', 'retry', 'access_token', 'force_token_refresh', 'amount_normalization', 'amountNormalization'] as $key) {
@@ -774,13 +1076,16 @@ class SasaPayClient
         return $this->waasEndpoints[$name] ?? self::WAAS_ENDPOINTS[$name];
     }
 
+    /**
+     * @param  array<string, mixed>  $config
+     */
     private static function resolveBaseUrl(array $config): string
     {
         if (! empty($config['base_url'])) {
-            return (string) $config['base_url'];
+            return Setting::string($config['base_url']);
         }
 
-        $environment = (string) ($config['environment'] ?? 'sandbox');
+        $environment = Setting::string($config['environment'] ?? null, 'sandbox');
 
         return match ($environment) {
             'sandbox' => self::SANDBOX_BASE_URL,
@@ -791,13 +1096,16 @@ class SasaPayClient
         };
     }
 
+    /**
+     * @param  array<string, mixed>  $config
+     */
     private static function resolveWaasBaseUrl(array $config): ?string
     {
         if (! empty($config['waas_base_url'])) {
-            return (string) $config['waas_base_url'];
+            return Setting::string($config['waas_base_url']);
         }
 
-        return match ((string) ($config['environment'] ?? 'sandbox')) {
+        return match (Setting::string($config['environment'] ?? null, 'sandbox')) {
             'sandbox' => self::WAAS_SANDBOX_BASE_URL,
             'production', 'live' => self::WAAS_PRODUCTION_BASE_URL,
             default => null,
@@ -826,6 +1134,9 @@ class SasaPayClient
         return $this->waasTokens;
     }
 
+    /**
+     * @param  array<string, mixed>  $config
+     */
     private static function resolveWaasTokenProvider(
         Factory $httpFactory,
         string $baseUrl,
@@ -844,7 +1155,7 @@ class SasaPayClient
         $waasConfig = $config;
         $waasConfig['client_id'] = $clientId;
         $waasConfig['client_secret'] = $clientSecret;
-        $waasConfig['token_cache_skew_seconds'] = (int) ($config['waas_token_cache_skew_seconds']
+        $waasConfig['token_cache_skew_seconds'] = Setting::int($config['waas_token_cache_skew_seconds']
             ?? $config['token_cache_skew_seconds']
             ?? 60);
         $tokenUrl = self::resolveTokenUrl($config, $baseUrl, 'waas_token_url');
@@ -857,10 +1168,13 @@ class SasaPayClient
             secretKey: 'client_secret',
             missingCredentialsMessage: 'SasaPay WAAS requires either waas_client_id and waas_client_secret, shared client_id and client_secret, or a custom token provider.',
             cacheFactory: $cacheFactory,
-            cacheKey: self::tokenCacheKey('waas', $config, $tokenUrl, (string) $clientId),
+            cacheKey: self::tokenCacheKey('waas', $config, $tokenUrl, Setting::string($clientId)),
         );
     }
 
+    /**
+     * @param  array<string, mixed>  $config
+     */
     private static function resolveTokenUrl(array $config, string $baseUrl, string $key = 'token_url'): string
     {
         $configured = $config[$key] ?? null;
@@ -881,13 +1195,18 @@ class SasaPayClient
         return rtrim($baseUrl, '/').self::TOKEN_PATH;
     }
 
+    /**
+     * @param  array<string, mixed>  $config
+     * @param  array<string, string>  $defaults
+     * @return array<string, string>
+     */
     private static function resolveEndpoints(array $config, string $key, array $defaults): array
     {
         $endpoints = $defaults;
 
-        foreach ((array) ($config[$key] ?? []) as $name => $path) {
-            if ($path !== null && $path !== '') {
-                $endpoints[$name] = (string) $path;
+        foreach (Setting::stringMap($config[$key] ?? null) as $name => $path) {
+            if ($path !== '') {
+                $endpoints[$name] = $path;
             }
         }
 
@@ -896,6 +1215,7 @@ class SasaPayClient
 
     /**
      * @param  array<int, string>  $allowedKeys
+     * @param  array<string, mixed>  $config
      * @return array<string, mixed>
      */
     private static function resolveDefaults(array $config, string $key, array $allowedKeys): array
@@ -912,9 +1232,13 @@ class SasaPayClient
         return $defaults;
     }
 
+    /**
+     * @param  array<string, mixed>  $config
+     * @return array<string, string>
+     */
     private static function resolveDefaultHeaders(array $config): array
     {
-        $headers = (array) ($config['default_headers'] ?? []);
+        $headers = self::stringMap($config['default_headers'] ?? []);
         $userAgent = $config['user_agent'] ?? null;
 
         if (is_string($userAgent) && $userAgent !== '' && ! self::hasHeader($headers, 'User-Agent')) {
@@ -924,10 +1248,32 @@ class SasaPayClient
         return $headers;
     }
 
+    /**
+     * Configured maps arrive as whatever the host wrote. Keys and values are
+     * narrowed once here so the rest of the client can trust them.
+     *
+     * @return array<string, string>
+     */
+    private static function stringMap(mixed $value): array
+    {
+        $map = [];
+
+        foreach (is_array($value) ? $value : [] as $key => $entry) {
+            if (is_string($key) && is_scalar($entry)) {
+                $map[$key] = (string) $entry;
+            }
+        }
+
+        return $map;
+    }
+
+    /**
+     * @param  array<string, string>  $headers
+     */
     private static function hasHeader(array $headers, string $name): bool
     {
         foreach (array_keys($headers) as $key) {
-            if (is_string($key) && strcasecmp($key, $name) === 0) {
+            if (strcasecmp($key, $name) === 0) {
                 return true;
             }
         }
@@ -944,9 +1290,12 @@ class SasaPayClient
         return filter_var($value, FILTER_VALIDATE_BOOLEAN);
     }
 
+    /**
+     * @param  array<string, mixed>  $config
+     */
     private static function tokenCacheKey(string $variant, array $config, string $baseUrl, string $clientId): string
     {
-        $env = (string) ($config['environment'] ?? 'sandbox');
+        $env = Setting::string($config['environment'] ?? null, 'sandbox');
 
         return 'payments:sasapay:'.$variant.':token:'.sha1($env.'|'.$baseUrl.'|'.$clientId);
     }

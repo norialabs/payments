@@ -74,7 +74,7 @@ class HttpTransport
                     headers: $context->headers,
                     query: $query,
                     body: $multipart === null ? $context->body : null,
-                    multipart: $multipart === null ? null : $context->body,
+                    multipart: $multipart === null ? null : (is_array($context->body) ? $context->body : []),
                     timeoutSeconds: $resolvedTimeout,
                 );
             } catch (ConnectionException $exception) {
@@ -312,7 +312,7 @@ class HttpTransport
             ];
         }
 
-        $name = (string) ($part['name'] ?? 'file');
+        $name = Setting::string($part['name'] ?? null, 'file');
 
         if (isset($part['path']) && is_string($part['path']) && $part['path'] !== '') {
             $filePart = $this->normalizePathFilePart($name, $part['path'], $part['filename'] ?? null);

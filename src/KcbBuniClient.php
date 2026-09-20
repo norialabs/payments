@@ -15,6 +15,7 @@ use NoriaLabs\Payments\Support\HttpTransport;
 use NoriaLabs\Payments\Support\Payload;
 use NoriaLabs\Payments\Support\RequestOptions;
 use NoriaLabs\Payments\Support\RetryPolicy;
+use NoriaLabs\Payments\Support\Setting;
 
 class KcbBuniClient
 {
@@ -79,6 +80,9 @@ class KcbBuniClient
         private readonly bool $throwOnBusinessError = false,
     ) {}
 
+    /**
+     * @param  array<string, mixed>  $config
+     */
     public static function make(
         Factory $httpFactory,
         array $config = [],
@@ -91,7 +95,7 @@ class KcbBuniClient
         $transport = new HttpTransport(
             http: $httpFactory,
             baseUrl: $baseUrl,
-            timeoutSeconds: isset($config['timeout_seconds']) ? (float) $config['timeout_seconds'] : null,
+            timeoutSeconds: Setting::float($config['timeout_seconds'] ?? null),
             defaultHeaders: self::resolveDefaultHeaders($config),
             retry: RetryPolicy::fromArray($config['retry'] ?? null),
             hooks: $hooks,
@@ -101,7 +105,7 @@ class KcbBuniClient
             http: $transport,
             tokens: $tokenProvider ?? self::tokenProvider($httpFactory, $config, $baseUrl, $cacheFactory),
             endpoints: self::resolveEndpoints($config),
-            mpesaExpress: (array) ($config['mpesa_express'] ?? []),
+            mpesaExpress: Setting::map($config['mpesa_express'] ?? null),
             amountNormalization: Payload::resolveAmountNormalization($config['amount_normalization'] ?? null),
             validatePayloads: self::boolean($config['validate_payloads'] ?? true),
             throwOnBusinessError: self::boolean($config['throw_on_business_error'] ?? false),
@@ -113,6 +117,10 @@ class KcbBuniClient
         return $this->tokens->getAccessToken($forceRefresh);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function mpesaStkPush(
         array $payload,
         string $messageId,
@@ -148,11 +156,19 @@ class KcbBuniClient
         );
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function authorizedPost(string $path, array $payload = [], array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest($path, 'POST', $payload, null, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $query
+     */
     public function authorizedGet(
         string $path,
         array $query = [],
@@ -161,6 +177,10 @@ class KcbBuniClient
         return $this->authorizedRequest($path, 'GET', null, $query, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function transferFunds(array $payload, array|RequestOptions|null $options = null): mixed
     {
         $requestOptions = RequestOptions::fromArray($options);
@@ -179,6 +199,10 @@ class KcbBuniClient
         );
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function queryCoreTransactionStatus(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest(
@@ -191,6 +215,10 @@ class KcbBuniClient
         );
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $query
+     */
     public function queryTransactionDetails(
         string|int $identifier,
         array $query = [],
@@ -200,12 +228,16 @@ class KcbBuniClient
             path: $this->endpoint('query_transaction_details', ['identifier' => rawurlencode((string) $identifier)]),
             method: 'GET',
             payload: null,
-            query: $query,
+            query: Setting::query($query),
             options: $options,
             businessContext: 'KCB Buni Transaction Details',
         );
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function vendingValidateRequest(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest(
@@ -218,6 +250,10 @@ class KcbBuniClient
         );
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function vendingVendorConfirmation(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest(
@@ -230,6 +266,10 @@ class KcbBuniClient
         );
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function vendingTransactionStatus(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest(
@@ -242,6 +282,11 @@ class KcbBuniClient
         );
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     * @param  array<string, mixed>  $query
+     */
     public function etimsRequest(
         string $path,
         array $payload = [],
@@ -255,12 +300,16 @@ class KcbBuniClient
             path: $this->endpoint('etims', ['path' => ltrim($path, '/')]),
             method: $method,
             payload: $method === 'GET' ? null : $payload,
-            query: $query,
+            query: Setting::query($query),
             options: $options,
             businessContext: 'KCB Buni eTIMS',
         );
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function p2pTransferStatusInquiry(
         array $payload,
         string $path = '',
@@ -291,6 +340,11 @@ class KcbBuniClient
         return BusinessStatus::statusMessage(BusinessStatus::KCB_BUNI, $response);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     * @param  array<string, mixed>  $query
+     */
     private function authorizedRequest(
         string $path,
         string $method,
@@ -311,7 +365,7 @@ class KcbBuniClient
             path: $path,
             method: $method,
             headers: $headers,
-            query: $query,
+            query: Setting::query($query),
             body: $payload,
             timeoutSeconds: $requestOptions->timeoutSeconds,
             retry: $requestOptions->retry,
@@ -329,12 +383,15 @@ class KcbBuniClient
         return $options->validate ?? $this->validatePayloads;
     }
 
+    /**
+     * @param  array<string, mixed>  $replacements
+     */
     private function endpoint(string $name, array $replacements = []): string
     {
         $endpoint = $this->endpoints[$name] ?? self::ENDPOINTS[$name];
 
         foreach ($replacements as $key => $value) {
-            $endpoint = str_replace('{'.$key.'}', (string) $value, $endpoint);
+            $endpoint = str_replace('{'.$key.'}', Setting::string($value), $endpoint);
         }
 
         return $endpoint;
@@ -353,12 +410,16 @@ class KcbBuniClient
         return $routeCode;
     }
 
+    /**
+     * @param  array<string, mixed>  $headers
+     * @param  array<string, mixed>  $options
+     */
     private function withOptionHeaders(array|RequestOptions|null $options, array $headers): RequestOptions
     {
         $requestOptions = RequestOptions::fromArray($options);
 
         return new RequestOptions(
-            headers: array_merge($requestOptions->headers, $headers),
+            headers: Setting::stringMap(array_merge($requestOptions->headers, $headers)),
             timeoutSeconds: $requestOptions->timeoutSeconds,
             retry: $requestOptions->retry,
             accessToken: $requestOptions->accessToken,
@@ -369,6 +430,11 @@ class KcbBuniClient
         );
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
     private function withAmount(array $payload, array|RequestOptions|null $options): array
     {
         $requestOptions = RequestOptions::fromArray($options);
@@ -376,6 +442,9 @@ class KcbBuniClient
         return Payload::normalizeAmount($payload, $requestOptions->amountNormalization ?? $this->amountNormalization);
     }
 
+    /**
+     * @param  array<string, mixed>  $config
+     */
     private static function tokenProvider(
         Factory $httpFactory,
         array $config,
@@ -391,13 +460,13 @@ class KcbBuniClient
             );
         }
 
-        $skew = (int) ($config['token_cache_skew_seconds'] ?? 60);
+        $skew = Setting::int($config['token_cache_skew_seconds'] ?? null, 60);
         $provider = new ClientCredentialsTokenProvider(
             http: $httpFactory,
             tokenUrl: self::resolveTokenUrl($config, $baseUrl),
             clientId: $consumerKey,
             clientSecret: $consumerSecret,
-            timeoutSeconds: isset($config['timeout_seconds']) ? (float) $config['timeout_seconds'] : null,
+            timeoutSeconds: Setting::float($config['timeout_seconds'] ?? null),
             cacheSkewSeconds: $skew,
             method: 'POST',
             body: ['grant_type' => 'client_credentials'],
@@ -412,17 +481,20 @@ class KcbBuniClient
 
         $repository = $cacheStore === true || $cacheStore === '' || $cacheStore === 'default'
             ? $cacheFactory->store()
-            : $cacheFactory->store((string) $cacheStore);
+            : $cacheFactory->store(Setting::string($cacheStore));
 
         return new CachedAccessTokenProvider(
             inner: $provider,
             cache: $repository,
             cacheKey: self::tokenCacheKey($config, $baseUrl, $consumerKey),
             cacheSkewSeconds: $skew,
-            cacheTtlSeconds: isset($config['cache_ttl_seconds']) ? (int) $config['cache_ttl_seconds'] : null,
+            cacheTtlSeconds: Setting::int($config['cache_ttl_seconds'] ?? 0) ?: null,
         );
     }
 
+    /**
+     * @param  array<string, mixed>  $config
+     */
     private static function resolveBaseUrl(array $config): string
     {
         $baseUrl = self::nullableString($config['base_url'] ?? null);
@@ -431,7 +503,7 @@ class KcbBuniClient
             return $baseUrl;
         }
 
-        $environment = (string) ($config['environment'] ?? 'uat');
+        $environment = Setting::string($config['environment'] ?? null, 'uat');
 
         if (isset(self::BASE_URLS[$environment])) {
             return self::BASE_URLS[$environment];
@@ -443,6 +515,9 @@ class KcbBuniClient
         );
     }
 
+    /**
+     * @param  array<string, mixed>  $config
+     */
     private static function resolveTokenUrl(array $config, string $baseUrl): string
     {
         $tokenUrl = self::nullableString($config['token_url'] ?? null);
@@ -456,22 +531,30 @@ class KcbBuniClient
         return rtrim($baseUrl, '/').'/'.ltrim($tokenPath, '/');
     }
 
+    /**
+     * @param  array<string, mixed>  $config
+     * @return array<string, string>
+     */
     private static function resolveEndpoints(array $config): array
     {
         $endpoints = self::ENDPOINTS;
 
-        foreach ((array) ($config['endpoints'] ?? []) as $name => $path) {
-            if ($path !== null && $path !== '') {
-                $endpoints[$name] = (string) $path;
+        foreach (self::stringMap($config['endpoints'] ?? []) as $name => $path) {
+            if ($path !== '') {
+                $endpoints[$name] = $path;
             }
         }
 
         return $endpoints;
     }
 
+    /**
+     * @param  array<string, mixed>  $config
+     * @return array<string, string>
+     */
     private static function resolveDefaultHeaders(array $config): array
     {
-        $headers = (array) ($config['default_headers'] ?? []);
+        $headers = self::stringMap($config['default_headers'] ?? []);
         $userAgent = $config['user_agent'] ?? null;
 
         if (is_string($userAgent) && $userAgent !== '' && ! self::hasHeader($headers, 'User-Agent')) {
@@ -487,10 +570,32 @@ class KcbBuniClient
         return $headers;
     }
 
+    /**
+     * Configured maps arrive as whatever the host wrote. Keys and values are
+     * narrowed once here so the rest of the client can trust them.
+     *
+     * @return array<string, string>
+     */
+    private static function stringMap(mixed $value): array
+    {
+        $map = [];
+
+        foreach (is_array($value) ? $value : [] as $key => $entry) {
+            if (is_string($key) && is_scalar($entry)) {
+                $map[$key] = (string) $entry;
+            }
+        }
+
+        return $map;
+    }
+
+    /**
+     * @param  array<string, string>  $headers
+     */
     private static function hasHeader(array $headers, string $name): bool
     {
         foreach (array_keys($headers) as $key) {
-            if (is_string($key) && strcasecmp($key, $name) === 0) {
+            if (strcasecmp($key, $name) === 0) {
                 return true;
             }
         }
@@ -498,9 +603,12 @@ class KcbBuniClient
         return false;
     }
 
+    /**
+     * @param  array<string, mixed>  $config
+     */
     private static function tokenCacheKey(array $config, string $baseUrl, string $consumerKey): string
     {
-        $env = (string) ($config['environment'] ?? 'uat');
+        $env = Setting::string($config['environment'] ?? null, 'uat');
 
         return 'payments:kcb_buni:token:'.sha1($env.'|'.$baseUrl.'|'.$consumerKey);
     }
@@ -511,7 +619,7 @@ class KcbBuniClient
             return null;
         }
 
-        $value = trim((string) $value);
+        $value = trim(Setting::string($value));
 
         return $value === '' ? null : $value;
     }

@@ -98,13 +98,13 @@ class FieldRules
             return $errors;
         }
 
-        if (isset($rule['max']) && mb_strlen($string) > (int) $rule['max']) {
-            $errors[] = "[{$field}] must not exceed {$rule['max']} characters, got ".mb_strlen($string).'.';
+        if (isset($rule['max']) && mb_strlen($string) > Setting::int($rule['max'])) {
+            $errors[] = "[{$field}] must not exceed ".Setting::int($rule['max']).' characters, got '.mb_strlen($string).'.';
         }
 
-        if (isset($rule['pattern']) && $string !== '' && preg_match((string) $rule['pattern'], $string) !== 1) {
+        if (isset($rule['pattern']) && $string !== '' && preg_match(Setting::string($rule['pattern']), $string) !== 1) {
             $description = isset($rule['format'])
-                ? " Expected format: {$rule['format']}."
+                ? ' Expected format: '.Setting::string($rule['format']).'.'
                 : '';
 
             $errors[] = "[{$field}] is malformed.".$description;
