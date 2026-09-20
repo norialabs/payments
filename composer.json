@@ -1,72 +1,78 @@
 {
-  "name": "norialabs/payments",
-  "description": "Laravel SDK for payment integrations: M-PESA Daraja, SasaPay, KCB Buni, and Paystack.",
-  "keywords": [
-    "laravel",
-    "payments",
-    "mpesa",
-    "daraja",
-    "kcb-buni",
-    "sasapay",
-    "paystack",
-    "kenya"
-  ],
-  "license": "MIT",
-  "authors": [
-    {
-      "name": "Joseph Gitonga",
-      "email": "thekiharani@gmail.com",
-      "homepage": "https://github.com/thekiharani"
-    }
-  ],
-  "require": {
-    "php": "^8.2",
-    "illuminate/http": "^11.0|^12.0|^13.0",
-    "illuminate/support": "^11.0|^12.0|^13.0"
-  },
-  "require-dev": {
-    "orchestra/testbench": "^9.0|^10.0",
-    "pestphp/pest": "^3.0",
-    "larastan/larastan": "^3.9",
-    "laravel/pint": "^1.29"
-  },
-  "autoload": {
-    "psr-4": {
-      "NoriaLabs\\Payments\\": "src/"
-    }
-  },
-  "autoload-dev": {
-    "psr-4": {
-      "NoriaLabs\\Payments\\Tests\\": "tests/"
-    }
-  },
-  "scripts": {
-    "analyse": "phpstan analyse --no-progress",
-    "format": "pint",
-    "format:test": "pint --test",
-    "quality": [
-      "@format:test",
-      "@analyse",
-      "@test:coverage"
+    "name": "norialabs/payments",
+    "description": "Laravel SDK for payment integrations: M-PESA Daraja, SasaPay, KCB Buni, and Paystack.",
+    "type": "library",
+    "keywords": [
+        "laravel",
+        "payments",
+        "mpesa",
+        "daraja",
+        "kcb-buni",
+        "sasapay",
+        "paystack",
+        "kenya"
     ],
-    "test": "pest",
-    "test:coverage": "pest --coverage"
-  },
-  "extra": {
-    "laravel": {
-      "providers": [
-        "NoriaLabs\\Payments\\Providers\\PaymentsServiceProvider"
-      ],
-      "aliases": {
-        "Payments": "NoriaLabs\\Payments\\Facades\\Payments"
-      }
+    "license": "MIT",
+    "homepage": "https://github.com/norialabs/payments",
+    "support": {
+        "issues": "https://github.com/norialabs/payments/issues",
+        "source": "https://github.com/norialabs/payments"
+    },
+    "authors": [
+        {
+            "name": "Joseph Gitonga",
+            "email": "thekiharani@gmail.com",
+            "homepage": "https://github.com/thekiharani"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "illuminate/http": "^11.0|^12.0|^13.0",
+        "illuminate/support": "^11.0|^12.0|^13.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^9.0|^10.0",
+        "pestphp/pest": "^3.0",
+        "larastan/larastan": "^3.9",
+        "laravel/pint": "^1.29"
+    },
+    "autoload": {
+        "psr-4": {
+            "NoriaLabs\\Payments\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "NoriaLabs\\Payments\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "analyse": "phpstan analyse --no-progress",
+        "format": "pint",
+        "format:test": "pint --test",
+        "quality": [
+            "@format:test",
+            "@analyse",
+            "@test:coverage"
+        ],
+        "test": "pest",
+        "test:coverage": "pest --coverage"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "NoriaLabs\\Payments\\Providers\\PaymentsServiceProvider"
+            ],
+            "aliases": {
+                "Payments": "NoriaLabs\\Payments\\Facades\\Payments"
+            }
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
     }
-  },
-  "minimum-stability": "stable",
-  "prefer-stable": true,
-  "config": {
-    "allow-plugins": {
-      "pestphp/pest-plugin": true
-    }
-  }
 }
