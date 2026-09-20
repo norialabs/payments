@@ -5,6 +5,7 @@ namespace NoriaLabs\Payments;
 use Illuminate\Http\Request;
 use InvalidArgumentException;
 use NoriaLabs\Payments\Exceptions\ConfigurationException;
+use NoriaLabs\Payments\Support\Setting;
 use Symfony\Component\HttpFoundation\IpUtils;
 
 class SasaPayCallbackVerifier
@@ -98,6 +99,9 @@ class SasaPayCallbackVerifier
         private readonly bool $verifySignature = true,
     ) {}
 
+    /**
+     * @param  array<string, mixed>  $config
+     */
     public static function make(array $config = []): self
     {
         $callbackConfig = (array) ($config['callback_security'] ?? []);
@@ -115,7 +119,7 @@ class SasaPayCallbackVerifier
         ?bool $enforceIpWhitelist = null,
         ?bool $verifySignature = null,
     ): bool {
-        $payload = $request->all();
+        $payload = Setting::map($request->all());
         $signature = $this->signatureFromPayload($payload);
 
         return $this->verify(
@@ -127,6 +131,9 @@ class SasaPayCallbackVerifier
         );
     }
 
+    /**
+     * @param  array<string, mixed>  $payload
+     */
     public function verify(
         array $payload,
         ?string $signature = null,
@@ -160,11 +167,17 @@ class SasaPayCallbackVerifier
         );
     }
 
+    /**
+     * @param  array<string, mixed>  $payload
+     */
     public function expectedSignature(array $payload, ?string $secretKey = null): string
     {
         return hash_hmac('sha512', $this->message($payload), $secretKey ?? $this->requireSecretKey());
     }
 
+    /**
+     * @param  array<string, mixed>  $payload
+     */
     public function message(array $payload): string
     {
         return self::messageFromValues(
@@ -208,6 +221,9 @@ class SasaPayCallbackVerifier
         return self::FIELD_ALIASES[$field];
     }
 
+    /**
+     * @param  array<string, mixed>  $payload
+     */
     public function callbackValue(array $payload, string $field): ?string
     {
         if (! array_key_exists($field, self::FIELD_ALIASES)) {
@@ -238,6 +254,9 @@ class SasaPayCallbackVerifier
         return false;
     }
 
+    /**
+     * @param  array<string, mixed>  $payload
+     */
     public function signatureFromPayload(array $payload): ?string
     {
         foreach (self::SIGNATURE_PAYLOAD_KEYS as $key) {
@@ -267,6 +286,9 @@ class SasaPayCallbackVerifier
         return $this->verifySignature;
     }
 
+    /**
+     * @param  array<string, mixed>  $payload
+     */
     private function payloadValue(array $payload, string $field): string
     {
         $value = $this->callbackValue($payload, $field);
@@ -291,7 +313,7 @@ class SasaPayCallbackVerifier
             throw new InvalidArgumentException("SasaPay callback field [{$field}] must be scalar.");
         }
 
-        $value = trim((string) $value);
+        $value = trim(Setting::string($value));
 
         if ($value === '') {
             throw new InvalidArgumentException("SasaPay callback field [{$field}] cannot be empty.");
@@ -310,7 +332,7 @@ class SasaPayCallbackVerifier
         }
 
         return array_values(array_filter(array_map(
-            static fn (mixed $ip): string => trim((string) $ip),
+            static fn (mixed $ip): string => trim(Setting::string($ip)),
             is_array($value) ? $value : self::TRUSTED_CALLBACK_IPS,
         )));
     }
@@ -321,7 +343,7 @@ class SasaPayCallbackVerifier
             return null;
         }
 
-        $value = trim((string) $value);
+        $value = trim(Setting::string($value));
 
         return $value === '' ? null : $value;
     }

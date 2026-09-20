@@ -52,6 +52,14 @@ class Hooks
             return [$value];
         }
 
-        return array_values($value);
+        $hooks = [];
+
+        foreach (is_array($value) ? $value : [] as $hook) {
+            if (is_callable($hook)) {
+                $hooks[] = $hook;
+            }
+        }
+
+        return $hooks;
     }
 }

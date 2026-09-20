@@ -13,6 +13,7 @@ use NoriaLabs\Payments\Support\HttpTransport;
 use NoriaLabs\Payments\Support\Payload;
 use NoriaLabs\Payments\Support\RequestOptions;
 use NoriaLabs\Payments\Support\RetryPolicy;
+use NoriaLabs\Payments\Support\Setting;
 
 class MpesaClient
 {
@@ -49,6 +50,9 @@ class MpesaClient
         'pull_transactions' => '/pulltransactions/v1/query',
     ];
 
+    /**
+     * @param  array<string, string>  $endpoints
+     */
     public function __construct(
         private readonly HttpTransport $http,
         private readonly AccessTokenProvider $tokens,
@@ -58,6 +62,9 @@ class MpesaClient
         private readonly bool $throwOnBusinessError = false,
     ) {}
 
+    /**
+     * @param  array<string, mixed>  $config
+     */
     public static function make(
         Factory $httpFactory,
         array $config = [],
@@ -70,7 +77,7 @@ class MpesaClient
         $transport = new HttpTransport(
             http: $httpFactory,
             baseUrl: $baseUrl,
-            timeoutSeconds: isset($config['timeout_seconds']) ? (float) $config['timeout_seconds'] : null,
+            timeoutSeconds: Setting::float($config['timeout_seconds'] ?? null),
             defaultHeaders: self::resolveDefaultHeaders($config),
             retry: RetryPolicy::fromArray($config['retry'] ?? null),
             hooks: $hooks,
@@ -92,7 +99,7 @@ class MpesaClient
             http: $transport,
             tokens: $tokens,
             endpoints: $endpoints,
-            defaultB2cVersion: (string) ($config['b2c_version'] ?? 'v1'),
+            defaultB2cVersion: Setting::string($config['b2c_version'] ?? null, 'v1'),
             amountNormalization: Payload::resolveAmountNormalization($config['amount_normalization'] ?? null),
             throwOnBusinessError: self::boolean($config['throw_on_business_error'] ?? false),
         );
@@ -103,6 +110,10 @@ class MpesaClient
         return $this->tokens->getAccessToken($forceRefresh);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function stkPush(array $payload, array|RequestOptions|null $options = null): mixed
     {
         $payload = Payload::normalizeKenyanPhoneNumbers($payload, ['PartyA', 'PhoneNumber']);
@@ -110,11 +121,19 @@ class MpesaClient
         return $this->authorizedRequest($this->endpoint('stk_push'), $this->withAmount($payload, $options), $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function stkPushQuery(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest($this->endpoint('stk_push_query'), $payload, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function registerC2BUrls(
         array $payload,
         string $version = 'v2',
@@ -127,16 +146,28 @@ class MpesaClient
         );
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function registerC2BUrlsV1(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->registerC2BUrls($payload, 'v1', $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function c2bSimulate(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest($this->endpoint('c2b_simulate'), $this->withAmount($payload, $options), $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function b2cPayment(
         array $payload,
         array|RequestOptions|null $options = null,
@@ -149,16 +180,28 @@ class MpesaClient
         );
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function b2cPaymentV3(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->b2cPayment($payload, $options, 'v3');
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function b2bPayment(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest($this->endpoint('b2b_payment'), $this->withAmount($payload, $options), $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function b2cAccountTopUp(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest(
@@ -168,6 +211,10 @@ class MpesaClient
         );
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function businessPayBill(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest(
@@ -177,6 +224,10 @@ class MpesaClient
         );
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function businessBuyGoods(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest(
@@ -186,6 +237,10 @@ class MpesaClient
         );
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function b2bExpressCheckout(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest(
@@ -195,86 +250,154 @@ class MpesaClient
         );
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function reversal(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest($this->endpoint('reversal'), $this->withAmount($payload, $options), $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function transactionStatus(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest($this->endpoint('transaction_status'), $payload, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function accountBalance(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest($this->endpoint('account_balance'), $payload, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function generateQrCode(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest($this->endpoint('dynamic_qr'), $this->withAmount($payload, $options), $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function taxRemittance(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest($this->endpoint('tax_remittance'), $this->withAmount($payload, $options), $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function billManagerOptIn(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest($this->endpoint('bill_manager_opt_in'), $payload, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function billManagerSingleInvoice(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest($this->endpoint('bill_manager_single_invoice'), $this->withAmount($payload, $options), $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function billManagerBulkInvoicing(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest($this->endpoint('bill_manager_bulk_invoicing'), $payload, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function billManagerReconciliation(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest($this->endpoint('bill_manager_reconciliation'), $payload, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function billManagerCancelSingleInvoice(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest($this->endpoint('bill_manager_cancel_single_invoice'), $payload, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function billManagerCancelBulkInvoice(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest($this->endpoint('bill_manager_cancel_bulk_invoice'), $payload, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function billManagerUpdateOnboardingDetails(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest($this->endpoint('bill_manager_update_onboarding_details'), $payload, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function billManagerUpdateSingleInvoice(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest($this->endpoint('bill_manager_update_single_invoice'), $this->withAmount($payload, $options), $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function billManagerUpdateBulkInvoice(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest($this->endpoint('bill_manager_update_bulk_invoice'), $payload, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function ratibaStandingOrder(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest($this->endpoint('ratiba_standing_order'), $this->withAmount($payload, $options), $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function registerPullTransactions(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest($this->endpoint('pull_transactions_register'), $payload, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function pullTransactions(array $payload, array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest($this->endpoint('pull_transactions'), $payload, $options);
@@ -305,11 +428,19 @@ class MpesaClient
         return base64_encode($businessShortCode.$passkey.$timestamp);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     */
     public function authorizedPost(string $path, array $payload = [], array|RequestOptions|null $options = null): mixed
     {
         return $this->authorizedRequest($path, $payload, $options);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $query
+     */
     public function authorizedGet(
         string $path,
         array $query = [],
@@ -318,6 +449,11 @@ class MpesaClient
         return $this->authorizedRequest($path, null, $options, 'GET', $query);
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     * @param  array<string, mixed>  $query
+     */
     private function authorizedRequest(
         string $path,
         ?array $payload,
@@ -337,7 +473,7 @@ class MpesaClient
             path: $path,
             method: $method,
             headers: $headers,
-            query: $query,
+            query: Setting::query($query),
             body: $payload,
             timeoutSeconds: $requestOptions->timeoutSeconds,
             retry: $requestOptions->retry,
@@ -350,6 +486,11 @@ class MpesaClient
         return $response;
     }
 
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
     private function withAmount(array $payload, array|RequestOptions|null $options): array
     {
         $requestOptions = RequestOptions::fromArray($options);
@@ -357,6 +498,10 @@ class MpesaClient
         return Payload::normalizeAmount($payload, $requestOptions->amountNormalization ?? $this->amountNormalization);
     }
 
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
     private function withCommand(array $payload, string $commandId): array
     {
         if (! array_key_exists('CommandID', $payload)) {
@@ -366,17 +511,23 @@ class MpesaClient
         return $payload;
     }
 
+    /**
+     * @param  array<string, mixed>  $replacements
+     */
     private function endpoint(string $name, array $replacements = []): string
     {
         $endpoint = $this->endpoints[$name];
 
         foreach ($replacements as $key => $value) {
-            $endpoint = str_replace('{'.$key.'}', (string) $value, $endpoint);
+            $endpoint = str_replace('{'.$key.'}', Setting::string($value), $endpoint);
         }
 
         return $endpoint;
     }
 
+    /**
+     * @param  array<string, mixed>  $config
+     */
     private static function resolveBaseUrl(array $config): string
     {
         $baseUrl = $config['base_url'] ?? null;
@@ -385,7 +536,7 @@ class MpesaClient
             return trim($baseUrl);
         }
 
-        $environment = (string) ($config['environment'] ?? 'sandbox');
+        $environment = Setting::string($config['environment'] ?? null, 'sandbox');
 
         if (isset(self::BASE_URLS[$environment])) {
             return self::BASE_URLS[$environment];
@@ -397,22 +548,30 @@ class MpesaClient
         );
     }
 
+    /**
+     * @param  array<string, mixed>  $config
+     * @return array<string, string>
+     */
     private static function resolveEndpoints(array $config): array
     {
         $endpoints = self::ENDPOINTS;
 
-        foreach ((array) ($config['endpoints'] ?? []) as $name => $path) {
-            if ($path !== null && $path !== '') {
-                $endpoints[$name] = (string) $path;
+        foreach (self::stringMap($config['endpoints'] ?? []) as $name => $path) {
+            if ($path !== '') {
+                $endpoints[$name] = $path;
             }
         }
 
         return $endpoints;
     }
 
+    /**
+     * @param  array<string, mixed>  $config
+     * @return array<string, string>
+     */
     private static function resolveDefaultHeaders(array $config): array
     {
-        $headers = (array) ($config['default_headers'] ?? []);
+        $headers = self::stringMap($config['default_headers'] ?? []);
         $userAgent = $config['user_agent'] ?? null;
 
         if (is_string($userAgent) && $userAgent !== '' && ! self::hasHeader($headers, 'User-Agent')) {
@@ -422,10 +581,32 @@ class MpesaClient
         return $headers;
     }
 
+    /**
+     * Configured maps arrive as whatever the host wrote. Keys and values are
+     * narrowed once here so the rest of the client can trust them.
+     *
+     * @return array<string, string>
+     */
+    private static function stringMap(mixed $value): array
+    {
+        $map = [];
+
+        foreach (is_array($value) ? $value : [] as $key => $entry) {
+            if (is_string($key) && is_scalar($entry)) {
+                $map[$key] = (string) $entry;
+            }
+        }
+
+        return $map;
+    }
+
+    /**
+     * @param  array<string, string>  $headers
+     */
     private static function hasHeader(array $headers, string $name): bool
     {
         foreach (array_keys($headers) as $key) {
-            if (is_string($key) && strcasecmp($key, $name) === 0) {
+            if (strcasecmp($key, $name) === 0) {
                 return true;
             }
         }
@@ -433,11 +614,14 @@ class MpesaClient
         return false;
     }
 
+    /**
+     * @param  array<string, mixed>  $config
+     */
     private static function tokenCacheKey(array $config): string
     {
-        $env = (string) ($config['environment'] ?? 'sandbox');
+        $env = Setting::string($config['environment'] ?? null, 'sandbox');
         $base = self::resolveBaseUrl($config);
-        $consumer = (string) ($config['consumer_key'] ?? '');
+        $consumer = Setting::string($config['consumer_key'] ?? null, '');
 
         return 'payments:mpesa:token:'.sha1($env.'|'.$base.'|'.$consumer);
     }

@@ -7,7 +7,7 @@ use NoriaLabs\Payments\Exceptions\ConfigurationException;
 trait ResolvesVerificationFlags
 {
     /**
-     * @param  array<int, string>  $flags
+     * @param  array<array-key, string>  $flags
      * @return array{0: bool|null, 1: bool|null} [$enforceIpWhitelist, $verifySignature]
      */
     protected function resolveVerificationFlags(array $flags): array

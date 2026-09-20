@@ -3,6 +3,7 @@
 namespace NoriaLabs\Payments\Providers;
 
 use Illuminate\Contracts\Cache\Factory as CacheFactory;
+use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Http\Client\Factory;
 use Illuminate\Support\ServiceProvider;
 use NoriaLabs\Payments\Http\Middleware\VerifyKcbBuniIpn;
@@ -23,39 +24,39 @@ class PaymentsServiceProvider extends ServiceProvider
     {
         $this->mergeConfigFrom(__DIR__.'/../../config/payments.php', 'payments');
 
-        $this->app->singleton(PaymentsManager::class, function ($app): PaymentsManager {
+        $this->app->singleton(PaymentsManager::class, function (Application $app): PaymentsManager {
             return new PaymentsManager(
                 http: $app->make(Factory::class),
-                config: $app['config'],
+                config: $app->make('config'),
                 cache: $app->bound(CacheFactory::class) ? $app->make(CacheFactory::class) : null,
             );
         });
 
-        $this->app->bind(MpesaClient::class, function ($app): MpesaClient {
+        $this->app->bind(MpesaClient::class, function (Application $app): MpesaClient {
             return $app->make(PaymentsManager::class)->mpesa();
         });
 
-        $this->app->bind(SasaPayClient::class, function ($app): SasaPayClient {
+        $this->app->bind(SasaPayClient::class, function (Application $app): SasaPayClient {
             return $app->make(PaymentsManager::class)->sasapay();
         });
 
-        $this->app->bind(SasaPayCallbackVerifier::class, function ($app): SasaPayCallbackVerifier {
+        $this->app->bind(SasaPayCallbackVerifier::class, function (Application $app): SasaPayCallbackVerifier {
             return $app->make(PaymentsManager::class)->sasapayCallbackVerifier();
         });
 
-        $this->app->bind(KcbBuniClient::class, function ($app): KcbBuniClient {
+        $this->app->bind(KcbBuniClient::class, function (Application $app): KcbBuniClient {
             return $app->make(PaymentsManager::class)->kcbBuni();
         });
 
-        $this->app->bind(KcbBuniIpnVerifier::class, function ($app): KcbBuniIpnVerifier {
+        $this->app->bind(KcbBuniIpnVerifier::class, function (Application $app): KcbBuniIpnVerifier {
             return $app->make(PaymentsManager::class)->kcbBuniIpnVerifier();
         });
 
-        $this->app->bind(PaystackClient::class, function ($app): PaystackClient {
+        $this->app->bind(PaystackClient::class, function (Application $app): PaystackClient {
             return $app->make(PaymentsManager::class)->paystack();
         });
 
-        $this->app->bind(PaystackWebhookVerifier::class, function ($app): PaystackWebhookVerifier {
+        $this->app->bind(PaystackWebhookVerifier::class, function (Application $app): PaystackWebhookVerifier {
             return $app->make(PaymentsManager::class)->paystackWebhookVerifier();
         });
     }

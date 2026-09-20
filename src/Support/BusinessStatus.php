@@ -20,6 +20,8 @@ class BusinessStatus
             return null;
         }
 
+        $body = Setting::map($body);
+
         return match ($provider) {
             self::KCB_BUNI => self::kcbBuni($body),
             self::MPESA => self::mpesa($body),
@@ -65,9 +67,9 @@ class BusinessStatus
         };
 
         foreach ($keys as $path) {
-            $value = self::dig($body, $path);
+            $value = self::dig(Setting::map($body), $path);
 
-            if (is_scalar($value) && trim((string) $value) !== '') {
+            if (is_scalar($value) && trim(Setting::string($value)) !== '') {
                 return (string) $value;
             }
         }
@@ -95,6 +97,8 @@ class BusinessStatus
             self::PAYSTACK => [['message']],
             default => [],
         };
+
+        $body = Setting::map($body);
 
         foreach ($keys as $path) {
             $value = self::dig($body, $path);
@@ -149,7 +153,7 @@ class BusinessStatus
         foreach ([['ResponseCode'], ['ResultCode'], ['Body', 'stkCallback', 'ResultCode']] as $path) {
             $value = self::dig($body, $path);
 
-            if (is_scalar($value) && trim((string) $value) !== '') {
+            if (is_scalar($value) && trim(Setting::string($value)) !== '') {
                 return self::isZero($value);
             }
         }
@@ -171,7 +175,7 @@ class BusinessStatus
         foreach ([['statusCode'], ['ResponseCode']] as $path) {
             $value = self::dig($body, $path);
 
-            if (is_scalar($value) && trim((string) $value) !== '') {
+            if (is_scalar($value) && trim(Setting::string($value)) !== '') {
                 return self::isZero($value);
             }
         }
@@ -202,7 +206,7 @@ class BusinessStatus
 
     private static function isZero(mixed $value): bool
     {
-        $value = trim((string) $value);
+        $value = trim(Setting::string($value));
 
         return $value === '0' || (is_numeric($value) && (float) $value === 0.0);
     }

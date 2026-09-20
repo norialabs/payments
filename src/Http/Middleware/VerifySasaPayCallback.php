@@ -15,6 +15,7 @@ class VerifySasaPayCallback
         private readonly SasaPayCallbackVerifier $verifier,
     ) {}
 
+    /** @param  Closure(Request): Response  $next */
     public function handle(Request $request, Closure $next, string ...$flags): Response
     {
         [$enforceIpWhitelist, $verifySignature] = $this->resolveVerificationFlags($flags);

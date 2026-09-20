@@ -20,6 +20,9 @@ class RequestOptions
         public readonly ?bool $throwOnBusinessError = null,
     ) {}
 
+    /**
+     * @param  array<string, mixed>  $value
+     */
     public static function fromArray(array|self|null $value): self
     {
         if ($value instanceof self) {
@@ -31,12 +34,14 @@ class RequestOptions
         }
 
         return new self(
-            headers: $value['headers'] ?? [],
-            timeoutSeconds: isset($value['timeout_seconds']) ? (float) $value['timeout_seconds'] : null,
+            headers: Setting::stringMap($value['headers'] ?? null),
+            timeoutSeconds: Setting::float($value['timeout_seconds'] ?? null),
             retry: array_key_exists('retry', $value) ? (RetryPolicy::fromArray($value['retry']) ?? false) : null,
-            accessToken: $value['access_token'] ?? null,
+            accessToken: isset($value['access_token']) ? Setting::string($value['access_token']) : null,
             forceTokenRefresh: (bool) ($value['force_token_refresh'] ?? false),
-            amountNormalization: $value['amount_normalization'] ?? $value['amountNormalization'] ?? null,
+            amountNormalization: isset($value['amount_normalization']) || isset($value['amountNormalization'])
+                ? Setting::string($value['amount_normalization'] ?? $value['amountNormalization'])
+                : null,
             validate: self::nullableBoolean($value['validate'] ?? null),
             throwOnBusinessError: self::nullableBoolean(
                 $value['throw_on_business_error'] ?? $value['throwOnBusinessError'] ?? null

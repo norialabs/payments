@@ -4,6 +4,7 @@ namespace NoriaLabs\Payments;
 
 use Illuminate\Http\Request;
 use NoriaLabs\Payments\Exceptions\ConfigurationException;
+use NoriaLabs\Payments\Support\Setting;
 use Symfony\Component\HttpFoundation\IpUtils;
 
 class PaystackWebhookVerifier
@@ -24,6 +25,9 @@ class PaystackWebhookVerifier
         private readonly bool $verifySignature = true,
     ) {}
 
+    /**
+     * @param  array<string, mixed>  $config
+     */
     public static function make(array $config = []): self
     {
         $webhookConfig = (array) ($config['webhook_security'] ?? []);
@@ -134,7 +138,7 @@ class PaystackWebhookVerifier
         }
 
         return array_values(array_filter(array_map(
-            static fn (mixed $ip): string => trim((string) $ip),
+            static fn (mixed $ip): string => trim(Setting::string($ip)),
             is_array($value) ? $value : self::TRUSTED_WEBHOOK_IPS,
         )));
     }
@@ -145,7 +149,7 @@ class PaystackWebhookVerifier
             return null;
         }
 
-        $value = trim((string) $value);
+        $value = trim(Setting::string($value));
 
         return $value === '' ? null : $value;
     }

@@ -6,6 +6,8 @@ class Payload
 {
     /**
      * @param  array<int, string>  $keys
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
      */
     public static function normalizeKenyanPhoneNumbers(array $payload, array $keys): array
     {
@@ -45,6 +47,10 @@ class Payload
         return $value;
     }
 
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
     public static function normalizeAmount(array $payload, mixed $normalization = 'string'): array
     {
         if (self::resolveAmountNormalization($normalization) === 'none') {
@@ -54,6 +60,10 @@ class Payload
         return self::stringifyAmount($payload);
     }
 
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
     public static function stringifyAmount(array $payload): array
     {
         foreach (['Amount', 'amount'] as $key) {
@@ -83,12 +93,12 @@ class Payload
                 : $formatted;
         }
 
-        return (string) $value;
+        return Setting::string($value);
     }
 
     public static function resolveAmountNormalization(mixed $value): string
     {
-        $normalized = strtolower(trim((string) ($value ?? 'string')));
+        $normalized = strtolower(trim(Setting::string($value ?? null, 'string')));
 
         return match ($normalized) {
             'none', 'raw', 'preserve' => 'none',
