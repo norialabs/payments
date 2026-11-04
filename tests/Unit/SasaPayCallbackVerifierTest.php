@@ -439,3 +439,110 @@ it('returns false from isTrustedIp for null and empty inputs', function (): void
     expect($verifier->isTrustedIp(null))->toBeFalse()
         ->and($verifier->isTrustedIp(''))->toBeFalse();
 });
+
+it('reads the signature from the header sasapay sends', function (): void {
+    $payload = sasapayCallbackPayload();
+    $verifier = new SasaPayCallbackVerifier('Merchant API Client ID');
+
+    $request = fn (string $signature): Request => Request::create(
+        uri: '/sasapay/callback',
+        method: 'POST',
+        parameters: $payload,
+        server: ['HTTP_X_SASAPAY_SIGNATURE' => $signature],
+    );
+
+    expect($verifier->verifyRequest($request(sasapayCallbackSignature($payload))))->toBeTrue()
+        ->and($verifier->verifyRequest($request(strtoupper(sasapayCallbackSignature($payload)))))->toBeTrue()
+        ->and($verifier->verifyRequest($request('forged')))->toBeFalse();
+});
+
+it('prefers the header over a payload signature', function (): void {
+    $payload = sasapayCallbackPayload();
+    $verifier = new SasaPayCallbackVerifier('Merchant API Client ID');
+
+    $request = Request::create(
+        uri: '/sasapay/callback',
+        method: 'POST',
+        parameters: $payload + ['sasapay_signature' => sasapayCallbackSignature($payload)],
+        server: ['HTTP_X_SASAPAY_SIGNATURE' => 'forged'],
+    );
+
+    expect($verifier->verifyRequest($request))->toBeFalse();
+});
+
+it('rejects a request with no signature anywhere', function (): void {
+    $verifier = new SasaPayCallbackVerifier('Merchant API Client ID');
+
+    expect($verifier->verifyRequest(Request::create('/sasapay/callback', 'POST', sasapayCallbackPayload())))->toBeFalse();
+});
+
+it('accepts the signature header through the laravel middleware', function (): void {
+    config()->set('payments.sasapay.client_id', 'Merchant API Client ID');
+
+    Route::post('/sasapay/header-callback', fn () => response('ok'))
+        ->middleware(VerifySasaPayCallback::class);
+
+    $payload = sasapayCallbackPayload();
+
+    $this->post('/sasapay/header-callback', $payload, ['X-SasaPay-Signature' => sasapayCallbackSignature($payload)])->assertOk();
+    $this->post('/sasapay/header-callback', $payload, ['X-SasaPay-Signature' => 'forged'])->assertForbidden();
+    $this->post('/sasapay/header-callback', $payload)->assertForbidden();
+});
+
+$signedBy = fn (string $message): string => hash_hmac('sha512', $message, 'Merchant API Client ID');
+
+it('verifies each callback shape sasapay documents', function (array $payload, string $message, ?string $merchantCode) use ($signedBy): void {
+    $verifier = new SasaPayCallbackVerifier('Merchant API Client ID', merchantCode: $merchantCode);
+
+    expect($verifier->verify($payload, $signedBy($message)))->toBeTrue()
+        ->and($verifier->verify($payload, $signedBy($message.'0')))->toBeFalse();
+})->with([
+    'c2b result, signed to two decimals' => [
+        ['MerchantRequestID' => '12345678', 'ResultCode' => '0', 'TransAmount' => '1.000000', 'RequestedAmount' => '1.00', 'BillRefNumber' => '12345678', 'CustomerMobile' => '254712345678', 'TransactionCode' => 'SPEJ47VZTWXC49G'],
+        'SPEJ47VZTWXC49G-600980-254712345678-12345678-1.00',
+        '600980',
+    ],
+    'c2b result, signed as sent' => [
+        ['ResultCode' => '0', 'TransAmount' => '1.000000', 'BillRefNumber' => '12345678', 'CustomerMobile' => '254712345678', 'TransactionCode' => 'SPEJ47VZTWXC49G'],
+        'SPEJ47VZTWXC49G-600980-254712345678-12345678-1.000000',
+        '600980',
+    ],
+    'ipn' => [
+        ['MerchantCode' => '600980', 'BusinessShortCode' => '600980', 'InvoiceNumber' => 'INV-278-RID-6754', 'TransID' => 'CDVISAIHD', 'TransactionType' => 'C2B', 'MSISDN' => '254700000005', 'TransAmount' => '10.00', 'BillRefNumber' => '12345'],
+        'CDVISAIHD-600980-254700000005-12345-10.00',
+        null,
+    ],
+    'payout result' => [
+        ['MerchantCode' => '600980', 'RecipientAccountNumber' => '254700000007', 'ResultCode' => '0', 'SasaPayTransactionCode' => 'CRVSUVGIRP', 'TransactionAmount' => '10.00', 'MerchantTransactionReference' => '25477'],
+        'CRVSUVGIRP-600980-254700000007-25477-10.00',
+        null,
+    ],
+]);
+
+it('prefers the merchant code a callback carries over the configured one', function (): void {
+    $verifier = new SasaPayCallbackVerifier('Merchant API Client ID', merchantCode: '999999');
+    $payload = sasapayCallbackPayload();
+
+    expect($verifier->verify($payload, sasapayCallbackSignature($payload)))->toBeTrue();
+});
+
+it('fails closed when a c2b result has no merchant code to sign with', function () use ($signedBy): void {
+    $verifier = new SasaPayCallbackVerifier('Merchant API Client ID');
+    $payload = ['ResultCode' => '0', 'TransAmount' => '1.00', 'BillRefNumber' => '1', 'CustomerMobile' => '254712345678', 'TransactionCode' => 'SP1'];
+
+    expect($verifier->verify($payload, $signedBy('SP1-600980-254712345678-1-1.00')))->toBeFalse();
+});
+
+it('takes the fallback merchant code from config', function () use ($signedBy): void {
+    $verifier = SasaPayCallbackVerifier::make(['client_id' => 'Merchant API Client ID', 'merchant_code' => '600980']);
+    $payload = ['ResultCode' => '0', 'TransAmount' => '1.00', 'BillRefNumber' => '1', 'CustomerMobile' => '254712345678', 'TransactionCode' => 'SP1'];
+
+    expect($verifier->verify($payload, $signedBy('SP1-600980-254712345678-1-1.00')))->toBeTrue();
+});
+
+it('rejects an amount changed after signing', function (): void {
+    $verifier = new SasaPayCallbackVerifier('Merchant API Client ID');
+    $signature = sasapayCallbackSignature(sasapayCallbackPayload());
+
+    expect($verifier->verify(sasapayCallbackPayload(['amount' => '1.00']), $signature))->toBeFalse();
+});
