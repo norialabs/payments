@@ -64,6 +64,7 @@ return [
         'waas_endpoints' => [],
         'callback_security' => [
             'secret_key' => env('SASAPAY_CALLBACK_SECRET_KEY', env('SASAPAY_CLIENT_ID')),
+            'merchant_code' => env('SASAPAY_CALLBACK_MERCHANT_CODE', env('SASAPAY_MERCHANT_CODE')),
             'trusted_ips' => env('SASAPAY_CALLBACK_TRUSTED_IPS', [
                 '47.129.43.141',
                 '13.229.247.179',

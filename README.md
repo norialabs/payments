@@ -126,9 +126,10 @@ Top-level sections:
 | `endpoints` | Optional SasaPay v1 endpoint-path overrides keyed by `SasaPayClient::ENDPOINTS`. |
 | `waas_endpoints` | Optional SasaPay WAAS endpoint-path overrides keyed by `SasaPayClient::WAAS_ENDPOINTS`. |
 | `callback_security.secret_key` | HMAC secret for inbound callbacks. Defaults to the SasaPay client ID, as documented by SasaPay. |
-| `callback_security.trusted_ips` | SasaPay callback source IP allowlist. Defaults to the documented SasaPay list. Override in published config or with comma-separated `SASAPAY_CALLBACK_TRUSTED_IPS`. |
+| `callback_security.merchant_code` | Merchant code for signed callbacks that carry none, such as the C2B result. Defaults to the SasaPay merchant code. |
+| `callback_security.trusted_ips` | SasaPay callback source IP allowlist. Defaults to SasaPay's published list. Override in published config or with comma-separated `SASAPAY_CALLBACK_TRUSTED_IPS`. |
 | `callback_security.enforce_ip_whitelist` | Reject callbacks from non-allowlisted IPs when using `verifyRequest()` or the middleware. Defaults to `false`; enable it after Laravel trusted proxy handling is configured for your deployment. |
-| `callback_security.verify_signature` | Verify callback HMAC signatures when using `verifyRequest()` or the middleware. Defaults to `true`, which fails closed: SasaPay publishes no signing scheme, so unless it has issued you one every callback is rejected. Set `SASAPAY_CALLBACK_VERIFY_SIGNATURE=false` when you rely on a capability token or IP allowlisting instead. See [SasaPay Callback Security](#sasapay-callback-security). |
+| `callback_security.verify_signature` | Verify the `X-SasaPay-Signature` HMAC when using `verifyRequest()` or the middleware. Defaults to `true`, as SasaPay advises rejecting invalid or missing signatures. |
 
 SasaPay documents OAuth client-credentials authentication separately for each
 surface, and each authenticates on its own base URL:
@@ -369,31 +370,25 @@ public function __invoke(Request $request, PaystackWebhookVerifier $verifier)
 
 ### SasaPay Callback Security
 
-> **SasaPay publishes no callback authentication scheme.** Searching its
-> documentation for `signature`, `hmac`, `sha256`, `checksum` and `allowlist`
-> returns nothing for the C2B callback, the IPN, the B2C/B2B result callback or
-> the status-query callback. The two controls below are *ours*, not SasaPay's,
-> and the trusted-IP list is observed rather than published.
+SasaPay documents two controls in its
+[Callback Security guide](https://developer.sasapay.app/docs/apis/callback-security?country=ke):
 
-The controls this package provides:
-
-- **HMAC-SHA512 over a canonical message.** Enable this only if SasaPay has
-  separately issued your account this scheme. Against an account that signs
-  nothing it rejects every legitimate callback, so `verify_signature` should be
-  turned off unless you have confirmed otherwise.
-- **Source-IP allowlisting** against the observed SasaPay egress addresses.
-
-A stronger control, and the one to prefer when SasaPay has issued you nothing:
-`CallBackURL` is supplied per request, so append a capability token of your own
-at initiation (`?token=…`) and check it on receipt. It proves the caller knew a
-secret you only ever sent to SasaPay. It authenticates the *caller*, not the
-*body*, so still confirm with a transaction status query before settling.
-
-The signed message format, when the HMAC scheme is in use, is:
+- **HMAC-SHA512 in the `X-SasaPay-Signature` header**, over this message:
+- **Source-IP allowlisting** against its published callback addresses.
 
 ```text
 sasapay_transaction_code-merchant_code-account_number-payment_reference-amount
 ```
+
+The verifier reads the header, and accepts the amount both as sent and to two
+decimals, because SasaPay signs `1500.00` while its C2B result reports
+`TransAmount` as `1.000000`. That result also carries no merchant code, so set
+`callback_security.merchant_code` or pass `merchantCode` when you construct the
+verifier. A payload `sasapay_signature` field is still read when the header is
+absent.
+
+If you serve several merchants, build a verifier per merchant with its own client ID
+and merchant code, as the config defaults cover only one.
 
 The HMAC secret defaults to the Merchant API Client ID unless you override `payments.sasapay.callback_security.secret_key`. Signature verification and IP allowlisting are independent controls:
 

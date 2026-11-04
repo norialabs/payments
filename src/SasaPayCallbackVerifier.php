@@ -85,6 +85,8 @@ class SasaPayCallbackVerifier
         ],
     ];
 
+    public const SIGNATURE_HEADER = 'X-SasaPay-Signature';
+
     private const SIGNATURE_PAYLOAD_KEYS = [
         'sasapay_signature',
     ];
@@ -97,6 +99,7 @@ class SasaPayCallbackVerifier
         private readonly array $trustedIps = self::TRUSTED_CALLBACK_IPS,
         private readonly bool $enforceIpWhitelist = false,
         private readonly bool $verifySignature = true,
+        private readonly ?string $merchantCode = null,
     ) {}
 
     /**
@@ -111,6 +114,7 @@ class SasaPayCallbackVerifier
             trustedIps: self::normalizeTrustedIps($callbackConfig['trusted_ips'] ?? self::TRUSTED_CALLBACK_IPS),
             enforceIpWhitelist: self::boolean($callbackConfig['enforce_ip_whitelist'] ?? false),
             verifySignature: self::boolean($callbackConfig['verify_signature'] ?? true),
+            merchantCode: self::nullableString($callbackConfig['merchant_code'] ?? $config['merchant_code'] ?? null),
         );
     }
 
@@ -120,7 +124,8 @@ class SasaPayCallbackVerifier
         ?bool $verifySignature = null,
     ): bool {
         $payload = Setting::map($request->all());
-        $signature = $this->signatureFromPayload($payload);
+        $header = $request->header(self::SIGNATURE_HEADER);
+        $signature = is_string($header) && trim($header) !== '' ? trim($header) : $this->signatureFromPayload($payload);
 
         return $this->verify(
             payload: $payload,
@@ -155,16 +160,34 @@ class SasaPayCallbackVerifier
             return false;
         }
 
+        $provided = strtolower(trim($signature));
+
         try {
-            $expectedSignature = $this->expectedSignature($payload);
+            foreach ($this->amountsAsSigned($payload) as $amount) {
+                if (hash_equals(strtolower($this->expectedSignature(['amount' => $amount] + $payload)), $provided)) {
+                    return true;
+                }
+            }
         } catch (InvalidArgumentException) {
             return false;
         }
 
-        return hash_equals(
-            strtolower($expectedSignature),
-            strtolower(trim($signature)),
-        );
+        return false;
+    }
+
+    /**
+     * SasaPay signs "1500.00", but its C2B result reports TransAmount as "1.000000".
+     *
+     * @param  array<string, mixed>  $payload
+     * @return list<string>
+     */
+    private function amountsAsSigned(array $payload): array
+    {
+        $amount = $this->payloadValue($payload, 'amount');
+
+        return is_numeric($amount)
+            ? array_values(array_unique([number_format((float) $amount, 2, '.', ''), $amount]))
+            : [$amount];
     }
 
     /**
@@ -182,7 +205,7 @@ class SasaPayCallbackVerifier
     {
         return self::messageFromValues(
             sasapayTransactionCode: $this->payloadValue($payload, 'sasapay_transaction_code'),
-            merchantCode: $this->payloadValue($payload, 'merchant_code'),
+            merchantCode: $this->callbackValue($payload, 'merchant_code') ?? $this->merchantCode ?? $this->payloadValue($payload, 'merchant_code'),
             accountNumber: $this->payloadValue($payload, 'account_number'),
             paymentReference: $this->payloadValue($payload, 'payment_reference'),
             amount: $this->payloadValue($payload, 'amount'),
