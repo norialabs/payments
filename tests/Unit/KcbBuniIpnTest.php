@@ -1,6 +1,6 @@
 <?php
 
-use NoriaLabs\Payments\Support\KcbBuniIpn;
+use Noria\Payments\Support\KcbBuniIpn;
 
 function kcbBuniTillNotification(): array
 {

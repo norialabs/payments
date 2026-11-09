@@ -1,12 +1,12 @@
 <?php
 
 use Illuminate\Support\Facades\Http;
-use NoriaLabs\Payments\Contracts\AccessTokenProvider;
-use NoriaLabs\Payments\Exceptions\BusinessException;
-use NoriaLabs\Payments\Exceptions\ConfigurationException;
-use NoriaLabs\Payments\PaystackClient;
-use NoriaLabs\Payments\Support\HttpTransport;
-use NoriaLabs\Payments\Support\RequestOptions;
+use Noria\Payments\Contracts\AccessTokenProvider;
+use Noria\Payments\Exceptions\BusinessException;
+use Noria\Payments\Exceptions\ConfigurationException;
+use Noria\Payments\PaystackClient;
+use Noria\Payments\Support\HttpTransport;
+use Noria\Payments\Support\RequestOptions;
 
 function paystackTokenProvider(string $token = 'sk_test_provider'): AccessTokenProvider
 {

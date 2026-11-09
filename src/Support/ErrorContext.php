@@ -1,6 +1,6 @@
 <?php
 
-namespace NoriaLabs\Payments\Support;
+namespace Noria\Payments\Support;
 
 use Illuminate\Http\Client\Response;
 

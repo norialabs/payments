@@ -1,8 +1,8 @@
 <?php
 
-namespace NoriaLabs\Payments\Support;
+namespace Noria\Payments\Support;
 
-use NoriaLabs\Payments\Contracts\AccessTokenProvider;
+use Noria\Payments\Contracts\AccessTokenProvider;
 
 class StaticAccessTokenProvider implements AccessTokenProvider
 {

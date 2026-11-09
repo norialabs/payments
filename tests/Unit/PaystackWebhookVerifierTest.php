@@ -2,9 +2,9 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use NoriaLabs\Payments\Exceptions\ConfigurationException;
-use NoriaLabs\Payments\Http\Middleware\VerifyPaystackWebhook;
-use NoriaLabs\Payments\PaystackWebhookVerifier;
+use Noria\Payments\Exceptions\ConfigurationException;
+use Noria\Payments\Http\Middleware\VerifyPaystackWebhook;
+use Noria\Payments\PaystackWebhookVerifier;
 
 function paystackWebhookPayload(array $overrides = []): array
 {

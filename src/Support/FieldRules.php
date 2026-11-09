@@ -1,8 +1,8 @@
 <?php
 
-namespace NoriaLabs\Payments\Support;
+namespace Noria\Payments\Support;
 
-use NoriaLabs\Payments\Exceptions\ValidationException;
+use Noria\Payments\Exceptions\ValidationException;
 
 class FieldRules
 {

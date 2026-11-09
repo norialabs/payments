@@ -1,19 +1,19 @@
 <?php
 
-namespace NoriaLabs\Payments;
+namespace Noria\Payments;
 
 use Illuminate\Contracts\Cache\Factory as CacheFactory;
 use Illuminate\Http\Client\Factory;
-use NoriaLabs\Payments\Contracts\AccessTokenProvider;
-use NoriaLabs\Payments\Exceptions\ConfigurationException;
-use NoriaLabs\Payments\Support\BusinessStatus;
-use NoriaLabs\Payments\Support\ClientCredentialsTokenProvider;
-use NoriaLabs\Payments\Support\Hooks;
-use NoriaLabs\Payments\Support\HttpTransport;
-use NoriaLabs\Payments\Support\Payload;
-use NoriaLabs\Payments\Support\RequestOptions;
-use NoriaLabs\Payments\Support\RetryPolicy;
-use NoriaLabs\Payments\Support\Setting;
+use Noria\Payments\Contracts\AccessTokenProvider;
+use Noria\Payments\Exceptions\ConfigurationException;
+use Noria\Payments\Support\BusinessStatus;
+use Noria\Payments\Support\ClientCredentialsTokenProvider;
+use Noria\Payments\Support\Hooks;
+use Noria\Payments\Support\HttpTransport;
+use Noria\Payments\Support\Payload;
+use Noria\Payments\Support\RequestOptions;
+use Noria\Payments\Support\RetryPolicy;
+use Noria\Payments\Support\Setting;
 
 class SasaPayClient
 {

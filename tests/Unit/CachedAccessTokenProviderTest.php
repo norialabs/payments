@@ -5,9 +5,9 @@ use Illuminate\Cache\CacheManager;
 use Illuminate\Cache\Repository;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Http;
-use NoriaLabs\Payments\Contracts\AccessTokenProvider;
-use NoriaLabs\Payments\Support\CachedAccessTokenProvider;
-use NoriaLabs\Payments\Support\ClientCredentialsTokenProvider;
+use Noria\Payments\Contracts\AccessTokenProvider;
+use Noria\Payments\Support\CachedAccessTokenProvider;
+use Noria\Payments\Support\ClientCredentialsTokenProvider;
 
 function arrayCacheRepository(): Repository
 {

@@ -1,6 +1,6 @@
 <?php
 
-namespace NoriaLabs\Payments\Contracts;
+namespace Noria\Payments\Contracts;
 
 interface AccessTokenProvider
 {

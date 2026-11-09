@@ -1,9 +1,9 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use NoriaLabs\Payments\Exceptions\ConfigurationException;
-use NoriaLabs\Payments\Http\Middleware\VerifyKcbBuniIpn;
-use NoriaLabs\Payments\KcbBuniIpnVerifier;
+use Noria\Payments\Exceptions\ConfigurationException;
+use Noria\Payments\Http\Middleware\VerifyKcbBuniIpn;
+use Noria\Payments\KcbBuniIpnVerifier;
 
 function kcbBuniKeyPair(): array
 {

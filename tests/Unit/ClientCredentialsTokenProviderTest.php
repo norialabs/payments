@@ -1,10 +1,10 @@
 <?php
 
 use Illuminate\Support\Facades\Http;
-use NoriaLabs\Payments\Exceptions\AuthenticationException;
-use NoriaLabs\Payments\Exceptions\ConfigurationException;
-use NoriaLabs\Payments\Support\AccessToken;
-use NoriaLabs\Payments\Support\ClientCredentialsTokenProvider;
+use Noria\Payments\Exceptions\AuthenticationException;
+use Noria\Payments\Exceptions\ConfigurationException;
+use Noria\Payments\Support\AccessToken;
+use Noria\Payments\Support\ClientCredentialsTokenProvider;
 
 it('caches tokens until expiry and force-refreshes on demand', function (): void {
     Http::fakeSequence('https://auth.example.test/token*')

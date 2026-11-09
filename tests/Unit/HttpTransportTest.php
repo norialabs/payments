@@ -3,16 +3,16 @@
 use Illuminate\Http\File;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
-use NoriaLabs\Payments\Exceptions\ApiException;
-use NoriaLabs\Payments\Exceptions\NetworkException;
-use NoriaLabs\Payments\Exceptions\TimeoutException;
-use NoriaLabs\Payments\Support\AfterResponseContext;
-use NoriaLabs\Payments\Support\BeforeRequestContext;
-use NoriaLabs\Payments\Support\ErrorContext;
-use NoriaLabs\Payments\Support\Hooks;
-use NoriaLabs\Payments\Support\HttpTransport;
-use NoriaLabs\Payments\Support\RetryDecisionContext;
-use NoriaLabs\Payments\Support\RetryPolicy;
+use Noria\Payments\Exceptions\ApiException;
+use Noria\Payments\Exceptions\NetworkException;
+use Noria\Payments\Exceptions\TimeoutException;
+use Noria\Payments\Support\AfterResponseContext;
+use Noria\Payments\Support\BeforeRequestContext;
+use Noria\Payments\Support\ErrorContext;
+use Noria\Payments\Support\Hooks;
+use Noria\Payments\Support\HttpTransport;
+use Noria\Payments\Support\RetryDecisionContext;
+use Noria\Payments\Support\RetryPolicy;
 
 it('parses JSON, plain text, empty, and absolute-url responses; runs hooks; honors body mutation', function (): void {
     $afterContexts = [];

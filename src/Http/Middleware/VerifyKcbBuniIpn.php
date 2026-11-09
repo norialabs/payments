@@ -1,10 +1,10 @@
 <?php
 
-namespace NoriaLabs\Payments\Http\Middleware;
+namespace Noria\Payments\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use NoriaLabs\Payments\KcbBuniIpnVerifier;
+use Noria\Payments\KcbBuniIpnVerifier;
 use Symfony\Component\HttpFoundation\Response;
 
 class VerifyKcbBuniIpn

@@ -1,6 +1,6 @@
 <?php
 
-namespace NoriaLabs\Payments\Exceptions;
+namespace Noria\Payments\Exceptions;
 
 class TimeoutException extends PaymentsException
 {

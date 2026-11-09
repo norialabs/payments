@@ -1,12 +1,12 @@
 <?php
 
 use Illuminate\Support\Facades\Http;
-use NoriaLabs\Payments\Contracts\AccessTokenProvider;
-use NoriaLabs\Payments\Exceptions\BusinessException;
-use NoriaLabs\Payments\Exceptions\ConfigurationException;
-use NoriaLabs\Payments\MpesaClient;
-use NoriaLabs\Payments\Support\Hooks;
-use NoriaLabs\Payments\Support\RequestOptions;
+use Noria\Payments\Contracts\AccessTokenProvider;
+use Noria\Payments\Exceptions\BusinessException;
+use Noria\Payments\Exceptions\ConfigurationException;
+use Noria\Payments\MpesaClient;
+use Noria\Payments\Support\Hooks;
+use Noria\Payments\Support\RequestOptions;
 
 function mpesaTokenProvider(string $token = 'mpesa-token'): AccessTokenProvider
 {

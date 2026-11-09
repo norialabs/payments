@@ -1,13 +1,13 @@
 <?php
 
-namespace NoriaLabs\Payments;
+namespace Noria\Payments;
 
 use Illuminate\Config\Repository;
 use Illuminate\Contracts\Cache\Factory as CacheFactory;
 use Illuminate\Http\Client\Factory;
-use NoriaLabs\Payments\Contracts\AccessTokenProvider;
-use NoriaLabs\Payments\Support\Hooks;
-use NoriaLabs\Payments\Support\Setting;
+use Noria\Payments\Contracts\AccessTokenProvider;
+use Noria\Payments\Support\Hooks;
+use Noria\Payments\Support\Setting;
 
 class PaymentsManager
 {

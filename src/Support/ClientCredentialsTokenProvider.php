@@ -1,13 +1,13 @@
 <?php
 
-namespace NoriaLabs\Payments\Support;
+namespace Noria\Payments\Support;
 
 use Illuminate\Contracts\Cache\Factory as CacheFactory;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Factory;
-use NoriaLabs\Payments\Contracts\AccessTokenProvider;
-use NoriaLabs\Payments\Exceptions\AuthenticationException;
-use NoriaLabs\Payments\Exceptions\ConfigurationException;
+use Noria\Payments\Contracts\AccessTokenProvider;
+use Noria\Payments\Exceptions\AuthenticationException;
+use Noria\Payments\Exceptions\ConfigurationException;
 
 class ClientCredentialsTokenProvider implements AccessTokenProvider
 {
