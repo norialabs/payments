@@ -2,9 +2,9 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use NoriaLabs\Payments\Exceptions\ConfigurationException;
-use NoriaLabs\Payments\Http\Middleware\VerifySasaPayCallback;
-use NoriaLabs\Payments\SasaPayCallbackVerifier;
+use Noria\Payments\Exceptions\ConfigurationException;
+use Noria\Payments\Http\Middleware\VerifySasaPayCallback;
+use Noria\Payments\SasaPayCallbackVerifier;
 
 function sasapayCallbackPayload(array $overrides = []): array
 {

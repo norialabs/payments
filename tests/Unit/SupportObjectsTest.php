@@ -2,15 +2,15 @@
 
 use Illuminate\Http\Client\Factory;
 use Illuminate\Http\Client\Response;
-use NoriaLabs\Payments\Exceptions\AuthenticationException;
-use NoriaLabs\Payments\Exceptions\NetworkException;
-use NoriaLabs\Payments\Exceptions\TimeoutException;
-use NoriaLabs\Payments\Support\AfterResponseContext;
-use NoriaLabs\Payments\Support\ErrorContext;
-use NoriaLabs\Payments\Support\Hooks;
-use NoriaLabs\Payments\Support\Payload;
-use NoriaLabs\Payments\Support\RequestOptions;
-use NoriaLabs\Payments\Support\RetryPolicy;
+use Noria\Payments\Exceptions\AuthenticationException;
+use Noria\Payments\Exceptions\NetworkException;
+use Noria\Payments\Exceptions\TimeoutException;
+use Noria\Payments\Support\AfterResponseContext;
+use Noria\Payments\Support\ErrorContext;
+use Noria\Payments\Support\Hooks;
+use Noria\Payments\Support\Payload;
+use Noria\Payments\Support\RequestOptions;
+use Noria\Payments\Support\RetryPolicy;
 
 it('builds AfterResponseContext and ErrorContext with expected fields', function (): void {
     $response = new Response(Factory::psr7Response(['ok' => true], 200));

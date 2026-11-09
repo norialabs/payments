@@ -1,7 +1,7 @@
 <?php
 
-use NoriaLabs\Payments\Exceptions\ValidationException;
-use NoriaLabs\Payments\Support\FieldRules;
+use Noria\Payments\Exceptions\ValidationException;
+use Noria\Payments\Support\FieldRules;
 
 it('treats a present but blank value as satisfying required', function (): void {
     expect(FieldRules::validate(['orgPassKey' => ''], ['orgPassKey' => ['required' => true]]))->toBe([]);

@@ -4,13 +4,13 @@ use Illuminate\Cache\CacheManager;
 use Illuminate\Config\Repository;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Http;
-use NoriaLabs\Payments\Contracts\AccessTokenProvider;
-use NoriaLabs\Payments\Exceptions\BusinessException;
-use NoriaLabs\Payments\Exceptions\ConfigurationException;
-use NoriaLabs\Payments\Exceptions\ValidationException;
-use NoriaLabs\Payments\KcbBuniClient;
-use NoriaLabs\Payments\Support\Hooks;
-use NoriaLabs\Payments\Support\RequestOptions;
+use Noria\Payments\Contracts\AccessTokenProvider;
+use Noria\Payments\Exceptions\BusinessException;
+use Noria\Payments\Exceptions\ConfigurationException;
+use Noria\Payments\Exceptions\ValidationException;
+use Noria\Payments\KcbBuniClient;
+use Noria\Payments\Support\Hooks;
+use Noria\Payments\Support\RequestOptions;
 
 function kcbBuniTokenProvider(string $token = 'kcb-token'): AccessTokenProvider
 {

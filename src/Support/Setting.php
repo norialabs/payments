@@ -1,6 +1,6 @@
 <?php
 
-namespace NoriaLabs\Payments\Support;
+namespace Noria\Payments\Support;
 
 /**
  * Configuration arrives as whatever the host put in it. These narrow one

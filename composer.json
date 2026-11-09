@@ -38,12 +38,12 @@
     },
     "autoload": {
         "psr-4": {
-            "NoriaLabs\\Payments\\": "src/"
+            "Noria\\Payments\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "NoriaLabs\\Payments\\Tests\\": "tests/"
+            "Noria\\Payments\\Tests\\": "tests/"
         }
     },
     "scripts": {
@@ -61,10 +61,10 @@
     "extra": {
         "laravel": {
             "providers": [
-                "NoriaLabs\\Payments\\Providers\\PaymentsServiceProvider"
+                "Noria\\Payments\\Providers\\PaymentsServiceProvider"
             ],
             "aliases": {
-                "Payments": "NoriaLabs\\Payments\\Facades\\Payments"
+                "Payments": "Noria\\Payments\\Facades\\Payments"
             }
         }
     },

@@ -1,10 +1,10 @@
 <?php
 
-namespace NoriaLabs\Payments;
+namespace Noria\Payments;
 
 use Illuminate\Http\Request;
-use NoriaLabs\Payments\Exceptions\ConfigurationException;
-use NoriaLabs\Payments\Support\Setting;
+use Noria\Payments\Exceptions\ConfigurationException;
+use Noria\Payments\Support\Setting;
 use Symfony\Component\HttpFoundation\IpUtils;
 
 class PaystackWebhookVerifier

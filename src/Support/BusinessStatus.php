@@ -1,8 +1,8 @@
 <?php
 
-namespace NoriaLabs\Payments\Support;
+namespace Noria\Payments\Support;
 
-use NoriaLabs\Payments\Exceptions\BusinessException;
+use Noria\Payments\Exceptions\BusinessException;
 
 class BusinessStatus
 {

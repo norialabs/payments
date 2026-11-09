@@ -32,18 +32,25 @@ The service provider is auto-discovered. Publish the config:
 php artisan vendor:publish --tag="payments-config"
 ```
 
+## Upgrading from 0.1
+
+0.2 moves the namespace from `NoriaLabs\Payments\` to `Noria\Payments\` and changes nothing else.
+Require `norialabs/payments:^0.2`, then replace `NoriaLabs\Payments\` with `Noria\Payments\` in imports,
+configuration files and container bindings, and clear the cached configuration. The old
+namespace has no aliases.
+
 ## Bindings
 
 The package registers:
 
-- `NoriaLabs\Payments\PaymentsManager`
-- `NoriaLabs\Payments\MpesaClient`
-- `NoriaLabs\Payments\SasaPayClient`
-- `NoriaLabs\Payments\SasaPayCallbackVerifier`
-- `NoriaLabs\Payments\KcbBuniClient`
-- `NoriaLabs\Payments\KcbBuniIpnVerifier`
-- `NoriaLabs\Payments\PaystackClient`
-- `NoriaLabs\Payments\PaystackWebhookVerifier`
+- `Noria\Payments\PaymentsManager`
+- `Noria\Payments\MpesaClient`
+- `Noria\Payments\SasaPayClient`
+- `Noria\Payments\SasaPayCallbackVerifier`
+- `Noria\Payments\KcbBuniClient`
+- `Noria\Payments\KcbBuniIpnVerifier`
+- `Noria\Payments\PaystackClient`
+- `Noria\Payments\PaystackWebhookVerifier`
 
 It also registers the facade alias:
 
@@ -203,7 +210,7 @@ name still fails fast with a `ConfigurationException`.
 ### M-PESA
 
 ```php
-use NoriaLabs\Payments\MpesaClient;
+use Noria\Payments\MpesaClient;
 
 $mpesa = app(MpesaClient::class);
 
@@ -232,7 +239,7 @@ numbers. They are sent to the provider as `2547XXXXXXXX` or `2541XXXXXXXX`.
 ### SasaPay v1 C2B
 
 ```php
-use NoriaLabs\Payments\SasaPayClient;
+use Noria\Payments\SasaPayClient;
 
 $sasapay = app(SasaPayClient::class);
 
@@ -251,7 +258,7 @@ $response = $sasapay->requestPayment([
 ### SasaPay WAAS Request Payment
 
 ```php
-use NoriaLabs\Payments\SasaPayClient;
+use Noria\Payments\SasaPayClient;
 
 $sasapay = app(SasaPayClient::class);
 
@@ -272,7 +279,7 @@ $response = $sasapay->waasRequestPayment([
 ### KCB Buni M-PESA Express
 
 ```php
-use NoriaLabs\Payments\KcbBuniClient;
+use Noria\Payments\KcbBuniClient;
 
 $buni = app(KcbBuniClient::class);
 
@@ -303,7 +310,7 @@ schema before it is sent — `transactionDescription` is capped at 13 characters
 ### KCB Buni Funds Transfer
 
 ```php
-use NoriaLabs\Payments\KcbBuniClient;
+use Noria\Payments\KcbBuniClient;
 
 $buni = app(KcbBuniClient::class);
 
@@ -323,7 +330,7 @@ $response = $buni->transferFunds([
 ### Paystack Initialize Transaction
 
 ```php
-use NoriaLabs\Payments\PaystackClient;
+use Noria\Payments\PaystackClient;
 
 $paystack = app(PaystackClient::class);
 
@@ -346,7 +353,7 @@ Paystack documents two webhook-origin controls:
 Use the middleware on your webhook route:
 
 ```php
-use NoriaLabs\Payments\Http\Middleware\VerifyPaystackWebhook;
+use Noria\Payments\Http\Middleware\VerifyPaystackWebhook;
 
 Route::post('/paystack/webhook', PaystackWebhookController::class)
     ->middleware(VerifyPaystackWebhook::class);
@@ -356,7 +363,7 @@ Or verify manually:
 
 ```php
 use Illuminate\Http\Request;
-use NoriaLabs\Payments\PaystackWebhookVerifier;
+use Noria\Payments\PaystackWebhookVerifier;
 
 public function __invoke(Request $request, PaystackWebhookVerifier $verifier)
 {
@@ -399,7 +406,7 @@ The HMAC secret defaults to the Merchant API Client ID unless you override `paym
 Use the middleware on your callback route:
 
 ```php
-use NoriaLabs\Payments\Http\Middleware\VerifySasaPayCallback;
+use Noria\Payments\Http\Middleware\VerifySasaPayCallback;
 
 Route::post('/sasapay/callback', SasaPayCallbackController::class)
     ->middleware(VerifySasaPayCallback::class);
@@ -409,7 +416,7 @@ Or verify manually:
 
 ```php
 use Illuminate\Http\Request;
-use NoriaLabs\Payments\SasaPayCallbackVerifier;
+use Noria\Payments\SasaPayCallbackVerifier;
 
 public function __invoke(Request $request, SasaPayCallbackVerifier $verifier)
 {
@@ -458,7 +465,7 @@ options. Applying the default middleware there would reject every validation
 request with HTTP 403:
 
 ```php
-use NoriaLabs\Payments\Http\Middleware\VerifyKcbBuniIpn;
+use Noria\Payments\Http\Middleware\VerifyKcbBuniIpn;
 
 // Signed notification routes — default configuration.
 Route::post('/kcb-buni/ipn/till', TillNotificationController::class)
@@ -495,7 +502,7 @@ Or verify manually:
 
 ```php
 use Illuminate\Http\Request;
-use NoriaLabs\Payments\KcbBuniIpnVerifier;
+use Noria\Payments\KcbBuniIpnVerifier;
 
 public function __invoke(Request $request, KcbBuniIpnVerifier $verifier)
 {
@@ -509,12 +516,12 @@ public function __invoke(Request $request, KcbBuniIpnVerifier $verifier)
 
 #### Reading IPN payloads and building acknowledgements
 
-`NoriaLabs\Payments\Support\KcbBuniIpn` models the three contracts so you do not
+`Noria\Payments\Support\KcbBuniIpn` models the three contracts so you do not
 have to hand-assemble the nested till envelope or remember which acknowledgement
 shape each route expects.
 
 ```php
-use NoriaLabs\Payments\Support\KcbBuniIpn;
+use Noria\Payments\Support\KcbBuniIpn;
 
 public function __invoke(Request $request)
 {
@@ -558,7 +565,7 @@ to, so a rejection is shaped correctly without a second branch.
 Use the manager when you want custom runtime clients instead of the default container bindings:
 
 ```php
-use NoriaLabs\Payments\PaymentsManager;
+use Noria\Payments\PaymentsManager;
 
 $manager = app(PaymentsManager::class);
 
@@ -596,7 +603,7 @@ instead of a generic gateway rejection. The rule sets are public constants —
 `::FUNDS_TRANSFER_RULES`.
 
 ```php
-use NoriaLabs\Payments\Exceptions\ValidationException;
+use Noria\Payments\Exceptions\ValidationException;
 
 try {
     $buni->mpesaStkPush($payload, messageId: $id, routeCode: '207');
@@ -1079,7 +1086,7 @@ M-PESA methods intentionally preserve Daraja field names. The client only string
 Endpoint overrides are available when a Daraja tenant is provisioned with a different path:
 
 ```php
-use NoriaLabs\Payments\Facades\Payments;
+use Noria\Payments\Facades\Payments;
 
 $mpesa = Payments::mpesa([
     'endpoints' => [
@@ -1101,7 +1108,7 @@ Every provider method accepts either:
 
 - `null`
 - `array`
-- `NoriaLabs\Payments\Support\RequestOptions`
+- `Noria\Payments\Support\RequestOptions`
 
 Fields:
 
@@ -1119,8 +1126,8 @@ Fields:
 Example:
 
 ```php
-use NoriaLabs\Payments\Support\RequestOptions;
-use NoriaLabs\Payments\Support\RetryPolicy;
+use Noria\Payments\Support\RequestOptions;
+use Noria\Payments\Support\RetryPolicy;
 
 $response = $sasapay->requestPayment($payload, new RequestOptions(
     headers: ['X-Request-Id' => 'abc-123'],
@@ -1136,10 +1143,10 @@ $response = $sasapay->requestPayment($payload, new RequestOptions(
 
 ## Custom Token Providers
 
-Implement `NoriaLabs\Payments\Contracts\AccessTokenProvider`:
+Implement `Noria\Payments\Contracts\AccessTokenProvider`:
 
 ```php
-use NoriaLabs\Payments\Contracts\AccessTokenProvider;
+use Noria\Payments\Contracts\AccessTokenProvider;
 
 class MyTokenProvider implements AccessTokenProvider
 {
@@ -1153,7 +1160,7 @@ class MyTokenProvider implements AccessTokenProvider
 Inject via the manager:
 
 ```php
-$client = app(\NoriaLabs\Payments\PaymentsManager::class)->paystack(
+$client = app(\Noria\Payments\PaymentsManager::class)->paystack(
     overrides: [],
     tokenProvider: new MyTokenProvider(),
 );
@@ -1167,10 +1174,10 @@ When you supply a custom token provider:
 
 ## Request Hooks
 
-Use `NoriaLabs\Payments\Support\Hooks` to observe and mutate transport behavior:
+Use `Noria\Payments\Support\Hooks` to observe and mutate transport behavior:
 
 ```php
-use NoriaLabs\Payments\Support\Hooks;
+use Noria\Payments\Support\Hooks;
 
 $hooks = new Hooks(
     beforeRequest: function ($context): void {
@@ -1201,13 +1208,13 @@ Hook contexts expose:
 
 The package throws:
 
-- `NoriaLabs\Payments\Exceptions\ConfigurationException`
-- `NoriaLabs\Payments\Exceptions\AuthenticationException`
-- `NoriaLabs\Payments\Exceptions\TimeoutException`
-- `NoriaLabs\Payments\Exceptions\NetworkException`
-- `NoriaLabs\Payments\Exceptions\ApiException`
-- `NoriaLabs\Payments\Exceptions\ValidationException`
-- `NoriaLabs\Payments\Exceptions\BusinessException`
+- `Noria\Payments\Exceptions\ConfigurationException`
+- `Noria\Payments\Exceptions\AuthenticationException`
+- `Noria\Payments\Exceptions\TimeoutException`
+- `Noria\Payments\Exceptions\NetworkException`
+- `Noria\Payments\Exceptions\ApiException`
+- `Noria\Payments\Exceptions\ValidationException`
+- `Noria\Payments\Exceptions\BusinessException`
 
 All of them extend `PaymentsException` and expose a machine-readable `codeName`.
 
@@ -1263,7 +1270,7 @@ $buni->transferFunds($payload, ['throw_on_business_error' => true]);
 ```
 
 ```php
-use NoriaLabs\Payments\Exceptions\BusinessException;
+use Noria\Payments\Exceptions\BusinessException;
 
 try {
     $buni->transferFunds($payload);

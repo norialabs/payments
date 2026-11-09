@@ -1,16 +1,16 @@
 <?php
 
 use Illuminate\Support\Facades\Http;
-use NoriaLabs\Payments\Contracts\AccessTokenProvider;
-use NoriaLabs\Payments\Facades\Payments;
-use NoriaLabs\Payments\KcbBuniClient;
-use NoriaLabs\Payments\KcbBuniIpnVerifier;
-use NoriaLabs\Payments\MpesaClient;
-use NoriaLabs\Payments\PaymentsManager;
-use NoriaLabs\Payments\PaystackClient;
-use NoriaLabs\Payments\PaystackWebhookVerifier;
-use NoriaLabs\Payments\SasaPayCallbackVerifier;
-use NoriaLabs\Payments\SasaPayClient;
+use Noria\Payments\Contracts\AccessTokenProvider;
+use Noria\Payments\Facades\Payments;
+use Noria\Payments\KcbBuniClient;
+use Noria\Payments\KcbBuniIpnVerifier;
+use Noria\Payments\MpesaClient;
+use Noria\Payments\PaymentsManager;
+use Noria\Payments\PaystackClient;
+use Noria\Payments\PaystackWebhookVerifier;
+use Noria\Payments\SasaPayCallbackVerifier;
+use Noria\Payments\SasaPayClient;
 
 function managerTokenProvider(string $token = 'token'): AccessTokenProvider
 {

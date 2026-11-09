@@ -1,9 +1,9 @@
 <?php
 
-namespace NoriaLabs\Payments\Facades;
+namespace Noria\Payments\Facades;
 
 use Illuminate\Support\Facades\Facade;
-use NoriaLabs\Payments\PaymentsManager;
+use Noria\Payments\PaymentsManager;
 
 class Payments extends Facade
 {

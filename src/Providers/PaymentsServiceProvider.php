@@ -1,22 +1,22 @@
 <?php
 
-namespace NoriaLabs\Payments\Providers;
+namespace Noria\Payments\Providers;
 
 use Illuminate\Contracts\Cache\Factory as CacheFactory;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Http\Client\Factory;
 use Illuminate\Support\ServiceProvider;
-use NoriaLabs\Payments\Http\Middleware\VerifyKcbBuniIpn;
-use NoriaLabs\Payments\Http\Middleware\VerifyPaystackWebhook;
-use NoriaLabs\Payments\Http\Middleware\VerifySasaPayCallback;
-use NoriaLabs\Payments\KcbBuniClient;
-use NoriaLabs\Payments\KcbBuniIpnVerifier;
-use NoriaLabs\Payments\MpesaClient;
-use NoriaLabs\Payments\PaymentsManager;
-use NoriaLabs\Payments\PaystackClient;
-use NoriaLabs\Payments\PaystackWebhookVerifier;
-use NoriaLabs\Payments\SasaPayCallbackVerifier;
-use NoriaLabs\Payments\SasaPayClient;
+use Noria\Payments\Http\Middleware\VerifyKcbBuniIpn;
+use Noria\Payments\Http\Middleware\VerifyPaystackWebhook;
+use Noria\Payments\Http\Middleware\VerifySasaPayCallback;
+use Noria\Payments\KcbBuniClient;
+use Noria\Payments\KcbBuniIpnVerifier;
+use Noria\Payments\MpesaClient;
+use Noria\Payments\PaymentsManager;
+use Noria\Payments\PaystackClient;
+use Noria\Payments\PaystackWebhookVerifier;
+use Noria\Payments\SasaPayCallbackVerifier;
+use Noria\Payments\SasaPayClient;
 
 class PaymentsServiceProvider extends ServiceProvider
 {

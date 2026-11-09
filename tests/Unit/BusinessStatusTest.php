@@ -1,7 +1,7 @@
 <?php
 
-use NoriaLabs\Payments\Exceptions\BusinessException;
-use NoriaLabs\Payments\Support\BusinessStatus;
+use Noria\Payments\Exceptions\BusinessException;
+use Noria\Payments\Support\BusinessStatus;
 
 it('reads kcb buni business outcomes from either documented envelope', function (): void {
     expect(BusinessStatus::succeeded(BusinessStatus::KCB_BUNI, ['header' => ['statusCode' => '0']]))->toBeTrue()

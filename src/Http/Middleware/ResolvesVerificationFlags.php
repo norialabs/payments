@@ -1,8 +1,8 @@
 <?php
 
-namespace NoriaLabs\Payments\Http\Middleware;
+namespace Noria\Payments\Http\Middleware;
 
-use NoriaLabs\Payments\Exceptions\ConfigurationException;
+use Noria\Payments\Exceptions\ConfigurationException;
 
 trait ResolvesVerificationFlags
 {

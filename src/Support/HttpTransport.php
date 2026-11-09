@@ -1,15 +1,15 @@
 <?php
 
-namespace NoriaLabs\Payments\Support;
+namespace Noria\Payments\Support;
 
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Factory;
 use Illuminate\Http\Client\Response;
 use Illuminate\Http\File;
 use Illuminate\Http\UploadedFile;
-use NoriaLabs\Payments\Exceptions\ApiException;
-use NoriaLabs\Payments\Exceptions\NetworkException;
-use NoriaLabs\Payments\Exceptions\TimeoutException;
+use Noria\Payments\Exceptions\ApiException;
+use Noria\Payments\Exceptions\NetworkException;
+use Noria\Payments\Exceptions\TimeoutException;
 use SplFileInfo;
 
 class HttpTransport

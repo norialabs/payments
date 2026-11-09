@@ -1,9 +1,9 @@
 <?php
 
-namespace NoriaLabs\Payments\Support;
+namespace Noria\Payments\Support;
 
 use Illuminate\Contracts\Cache\Repository;
-use NoriaLabs\Payments\Contracts\AccessTokenProvider;
+use Noria\Payments\Contracts\AccessTokenProvider;
 
 class CachedAccessTokenProvider implements AccessTokenProvider
 {

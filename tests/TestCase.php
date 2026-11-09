@@ -1,8 +1,8 @@
 <?php
 
-namespace NoriaLabs\Payments\Tests;
+namespace Noria\Payments\Tests;
 
-use NoriaLabs\Payments\Providers\PaymentsServiceProvider;
+use Noria\Payments\Providers\PaymentsServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
 
 abstract class TestCase extends Orchestra
