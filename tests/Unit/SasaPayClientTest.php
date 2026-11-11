@@ -998,3 +998,71 @@ it('detects sasapay business failures returned with http 200', function (): void
     expect(fn () => $strict->channelCodes())
         ->toThrow(BusinessException::class, 'Invalid merchant code');
 });
+
+it('sends fund movement, account validation and status queries with the merchant code under each endpoint\'s own field name', function (): void {
+    Http::fake(['*' => Http::response(['status' => true], 200)]);
+
+    $client = SasaPayClient::make(Http::getFacadeRoot(), [
+        'environment' => 'sandbox',
+        'payment_defaults' => ['MerchantCode' => '600980', 'CallBackURL' => 'https://example.com/core-callback'],
+    ], new class implements AccessTokenProvider
+    {
+        public function getAccessToken(bool $forceRefresh = false): string
+        {
+            return 'token';
+        }
+    });
+
+    $client->internalFundMovement(['amount' => 1500]);
+    $client->accountValidation(['channel_code' => '63902', 'account_number' => '254712345678', 'account_type' => 1]);
+    $client->transactionStatusQuery(['CheckoutRequestId' => 'abc']);
+    $client->processPayment(['CheckoutRequestID' => 'abc', 'VerificationCode' => '123456']);
+
+    Http::assertSent(fn ($request): bool => str_ends_with($request->url(), '/transactions/fund-movement/')
+        && $request->data() === ['amount' => '1500', 'merchantCode' => '600980']);
+    Http::assertSent(fn ($request): bool => str_ends_with($request->url(), '/accounts/account-validation/')
+        && $request->data()['merchant_code'] === '600980'
+        && ! array_key_exists('MerchantCode', $request->data()));
+    Http::assertSent(fn ($request): bool => str_ends_with($request->url(), '/transactions/status-query/')
+        && $request->data()['MerchantCode'] === '600980'
+        && ! array_key_exists('CallBackURL', $request->data()));
+    Http::assertSent(fn ($request): bool => str_ends_with($request->url(), '/payments/process-payment/')
+        && $request->data()['MerchantCode'] === '600980');
+});
+
+it('never adds the default merchant code beside one the caller spelled another way', function (): void {
+    Http::fake(['*' => Http::response(['status' => true], 200)]);
+
+    $client = SasaPayClient::make(Http::getFacadeRoot(), [
+        'environment' => 'sandbox',
+        'payment_defaults' => ['MerchantCode' => '600980'],
+    ], new class implements AccessTokenProvider
+    {
+        public function getAccessToken(bool $forceRefresh = false): string
+        {
+            return 'token';
+        }
+    });
+
+    $client->internalFundMovement(['MerchantCode' => '711111', 'amount' => '10.00']);
+
+    Http::assertSent(fn ($request): bool => str_ends_with($request->url(), '/transactions/fund-movement/')
+        && $request->data() === ['MerchantCode' => '711111', 'amount' => '10.00']);
+});
+
+it('sends the b2b receiver account type in the capitals sasapay requires', function (string $given): void {
+    Http::fake(['*' => Http::response(['status' => true], 200)]);
+
+    $client = SasaPayClient::make(Http::getFacadeRoot(), ['environment' => 'sandbox'], new class implements AccessTokenProvider
+    {
+        public function getAccessToken(bool $forceRefresh = false): string
+        {
+            return 'token';
+        }
+    });
+
+    $client->b2bPayment(['MerchantCode' => '600980', 'Amount' => 10, 'ReceiverMerchantCode' => '3209', 'ReceiverAccountType' => $given]);
+
+    Http::assertSent(fn ($request): bool => str_ends_with($request->url(), '/payments/b2b/')
+        && $request->data()['ReceiverAccountType'] === strtoupper(trim($given)));
+})->with(['paybill', 'Till', ' till ']);

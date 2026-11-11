@@ -219,7 +219,7 @@ class SasaPayClient
      */
     public function processPayment(array $payload, array|RequestOptions|null $options = null): mixed
     {
-        return $this->authorizedRequest($this->endpoint('process_payment'), $payload, $options);
+        return $this->authorizedRequest($this->endpoint('process_payment'), $this->withMerchantCode($payload, 'MerchantCode'), $options);
     }
 
     /**
@@ -243,7 +243,7 @@ class SasaPayClient
     {
         return $this->authorizedRequest(
             $this->endpoint('b2b_payment'),
-            $this->withAmount($this->withPaymentDefaults($payload), $options),
+            $this->withAmount($this->withReceiverAccountType($this->withPaymentDefaults($payload)), $options),
             $options
         );
     }
@@ -293,7 +293,7 @@ class SasaPayClient
      */
     public function accountValidation(array $payload, array|RequestOptions|null $options = null): mixed
     {
-        return $this->authorizedRequest($this->endpoint('account_validation'), $payload, $options);
+        return $this->authorizedRequest($this->endpoint('account_validation'), $this->withMerchantCode($payload, 'merchant_code'), $options);
     }
 
     /**
@@ -302,7 +302,11 @@ class SasaPayClient
      */
     public function internalFundMovement(array $payload, array|RequestOptions|null $options = null): mixed
     {
-        return $this->authorizedRequest($this->endpoint('internal_fund_movement'), $payload, $options);
+        return $this->authorizedRequest(
+            $this->endpoint('internal_fund_movement'),
+            $this->withAmount($this->withMerchantCode($payload, 'merchantCode'), $options),
+            $options
+        );
     }
 
     /**
@@ -320,7 +324,7 @@ class SasaPayClient
      */
     public function transactionStatusQuery(array $payload, array|RequestOptions|null $options = null): mixed
     {
-        return $this->authorizedRequest($this->endpoint('transaction_status_query'), $payload, $options);
+        return $this->authorizedRequest($this->endpoint('transaction_status_query'), $this->withMerchantCode($payload, 'MerchantCode'), $options);
     }
 
     /**
@@ -1004,6 +1008,36 @@ class SasaPayClient
     private function withPaymentDefaults(array $payload): array
     {
         return $this->withDefaults($payload, $this->paymentDefaults);
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    private function withMerchantCode(array $payload, string $key): array
+    {
+        foreach (array_keys($payload) as $given) {
+            if (str_replace('_', '', strtolower((string) $given)) === 'merchantcode') {
+                return $payload;
+            }
+        }
+
+        return $this->withDefaults($payload, [$key => $this->paymentDefaults['MerchantCode'] ?? null]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    private function withReceiverAccountType(array $payload): array
+    {
+        $type = $payload['ReceiverAccountType'] ?? null;
+
+        if (is_string($type) && in_array(strtoupper(trim($type)), ['PAYBILL', 'TILL'], true)) {
+            $payload['ReceiverAccountType'] = strtoupper(trim($type));
+        }
+
+        return $payload;
     }
 
     /**
