@@ -925,6 +925,7 @@ Most v1 endpoints take PascalCase fields such as `MerchantCode` and `Amount`. Th
 | `internalFundMovement()` | `merchantCode`, `amount` (string, for example `"1000.00"`) | `{"status": true, "message": "SUCCESS,Transaction completed"}` |
 | `accountValidation()` | `merchant_code`, `channel_code`, `account_number`, `account_type` (`0` SasaPay, `1` mobile money, `2` M-PESA Paybill, `3` M-PESA Till, `4` bank) | `account_details.account_name` |
 | `transactionStatusQuery()` | `MerchantCode` plus one of `CheckoutRequestId`, `MerchantTransactionReference`, `TransactionCode`, and `CallbackUrl` (not `CallBackURL`) | Only an acknowledgement. The result is posted to `CallbackUrl`. |
+| `transactionStatus()` | `MerchantCode` plus one of `CheckoutRequestId`, `MerchantTransactionReference`, `TransactionCode` | The result itself, synchronously: `data.ResultCode`, `data.TransactionCode`, and for C2B `data.Paid` and `data.AmountPaid`. SasaPay no longer publishes this page, but the endpoint still answers. |
 | `b2bPayment()` | `ReceiverAccountType` of `PAYBILL` or `TILL`, and `NetworkCode` (`63902` M-PESA, `0` SasaPay) for the receiver | `B2BRequestID`, `ConversationID`; no `CheckoutRequestID` until the callback |
 | `b2cPayment()` | `Channel` is the receiver's network or bank code | `B2CRequestID`, `ConversationID`; no `CheckoutRequestID` until the callback |
 | `channelCodes()` | none | `data[]` of `bank_name` and `bank_code`: banks only, no mobile-money networks |
@@ -1373,6 +1374,7 @@ The SasaPay endpoint matrix was aligned with the public SasaPay docs:
 - https://developer.sasapay.app/docs/apis/internal-fund-movement?country=ke
 - https://developer.sasapay.app/docs/apis/account-validation?country=ke
 - https://developer.sasapay.app/docs/apis/transaction-status?country=ke
+- https://web.archive.org/web/20231209081218/https://docs.sasapay.app/docs/transactionstatus/ (synchronous `/transactions/status/`)
 - https://developer.sasapay.app/docs/apis/check-merchant-balance?country=ke
 - https://docs.sasapay.app/docs/waas/introduction/
 - https://docs.sasapay.app/docs/waas/auth/
