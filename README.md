@@ -914,6 +914,21 @@ Methods return parsed JSON or text responses. HTTP 4xx/5xx responses throw `ApiE
 
 SasaPay amount fields are string-cast by default for backward compatibility. Pass `new RequestOptions(amountNormalization: 'none')` or set `sasapay.amount_normalization` to `none` when an endpoint requires numeric JSON values.
 
+`sasapay.payment_defaults.MerchantCode` is filled in under each endpoint's own field name when the payload carries no merchant code in any spelling. `b2bPayment()` upper-cases a `paybill` or `till` `ReceiverAccountType`, because SasaPay accepts only `PAYBILL` and `TILL`.
+
+### SasaPay v1 Fields That Break the Pattern
+
+Most v1 endpoints take PascalCase fields such as `MerchantCode` and `Amount`. These do not:
+
+| Method | Body SasaPay expects | Response |
+| --- | --- | --- |
+| `internalFundMovement()` | `merchantCode`, `amount` (string, for example `"1000.00"`) | `{"status": true, "message": "SUCCESS,Transaction completed"}` |
+| `accountValidation()` | `merchant_code`, `channel_code`, `account_number`, `account_type` (`0` SasaPay, `1` mobile money, `2` M-PESA Paybill, `3` M-PESA Till, `4` bank) | `account_details.account_name` |
+| `transactionStatusQuery()` | `MerchantCode` plus one of `CheckoutRequestId`, `MerchantTransactionReference`, `TransactionCode`, and `CallbackUrl` (not `CallBackURL`) | Only an acknowledgement. The result is posted to `CallbackUrl`. |
+| `b2bPayment()` | `ReceiverAccountType` of `PAYBILL` or `TILL`, and `NetworkCode` (`63902` M-PESA, `0` SasaPay) for the receiver | `B2BRequestID`, `ConversationID`; no `CheckoutRequestID` until the callback |
+| `b2cPayment()` | `Channel` is the receiver's network or bank code | `B2CRequestID`, `ConversationID`; no `CheckoutRequestID` until the callback |
+| `channelCodes()` | none | `data[]` of `bank_name` and `bank_code`: banks only, no mobile-money networks |
+
 ### SasaPay Callback Security
 
 | API | Behavior |
@@ -1355,6 +1370,10 @@ The SasaPay endpoint matrix was aligned with the public SasaPay docs:
 - https://docs.sasapay.app/docs/b2c/
 - https://docs.sasapay.app/docs/b2b/
 - https://docs.sasapay.app/docs/channel-codes/
+- https://developer.sasapay.app/docs/apis/internal-fund-movement?country=ke
+- https://developer.sasapay.app/docs/apis/account-validation?country=ke
+- https://developer.sasapay.app/docs/apis/transaction-status?country=ke
+- https://developer.sasapay.app/docs/apis/check-merchant-balance?country=ke
 - https://docs.sasapay.app/docs/waas/introduction/
 - https://docs.sasapay.app/docs/waas/auth/
 - https://docs.sasapay.app/docs/waas/getchannelcodes/
