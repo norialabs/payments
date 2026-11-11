@@ -315,7 +315,7 @@ class SasaPayClient
      */
     public function transactionStatus(array $payload, array|RequestOptions|null $options = null): mixed
     {
-        return $this->authorizedRequest($this->endpoint('transaction_status'), $payload, $options);
+        return $this->authorizedRequest($this->endpoint('transaction_status'), $this->withMerchantCode($payload, 'MerchantCode'), $options);
     }
 
     /**
@@ -333,7 +333,7 @@ class SasaPayClient
      */
     public function transactionStatusExact(array $payload, array|RequestOptions|null $options = null): mixed
     {
-        return $this->authorizedRequest($this->endpoint('transaction_status_exact'), $payload, $options);
+        return $this->authorizedRequest($this->endpoint('transaction_status_exact'), $this->withMerchantCode($payload, 'MerchantCode'), $options);
     }
 
     /**

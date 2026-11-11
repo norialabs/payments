@@ -999,7 +999,7 @@ it('detects sasapay business failures returned with http 200', function (): void
         ->toThrow(BusinessException::class, 'Invalid merchant code');
 });
 
-it('sends fund movement, account validation and status queries with the merchant code under each endpoint\'s own field name', function (): void {
+it('sends fund movement, account validation and both status calls with the merchant code under each endpoint\'s own field name', function (): void {
     Http::fake(['*' => Http::response(['status' => true], 200)]);
 
     $client = SasaPayClient::make(Http::getFacadeRoot(), [
@@ -1016,6 +1016,7 @@ it('sends fund movement, account validation and status queries with the merchant
     $client->internalFundMovement(['amount' => 1500]);
     $client->accountValidation(['channel_code' => '63902', 'account_number' => '254712345678', 'account_type' => 1]);
     $client->transactionStatusQuery(['CheckoutRequestId' => 'abc']);
+    $client->transactionStatus(['MerchantTransactionReference' => 'PO-1']);
     $client->processPayment(['CheckoutRequestID' => 'abc', 'VerificationCode' => '123456']);
 
     Http::assertSent(fn ($request): bool => str_ends_with($request->url(), '/transactions/fund-movement/')
@@ -1026,6 +1027,8 @@ it('sends fund movement, account validation and status queries with the merchant
     Http::assertSent(fn ($request): bool => str_ends_with($request->url(), '/transactions/status-query/')
         && $request->data()['MerchantCode'] === '600980'
         && ! array_key_exists('CallBackURL', $request->data()));
+    Http::assertSent(fn ($request): bool => str_ends_with($request->url(), '/transactions/status/')
+        && $request->data() === ['MerchantTransactionReference' => 'PO-1', 'MerchantCode' => '600980']);
     Http::assertSent(fn ($request): bool => str_ends_with($request->url(), '/payments/process-payment/')
         && $request->data()['MerchantCode'] === '600980');
 });
