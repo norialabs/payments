@@ -10,6 +10,7 @@ Laravel package for payment providers:
 - SasaPay Wallet as a Service (WAAS) v2 APIs
 - KCB Buni APIs
 - Paystack APIs
+- Noria Pay, Noria's own gateway, for products that move money through it
 
 The package is a Laravel-native HTTP SDK. It registers container bindings, publishes config, obtains and caches OAuth tokens where providers require them, sends authenticated requests, supports retries and hooks, verifies KCB Buni IPNs and Paystack webhooks, applies the available controls to SasaPay callbacks, and throws typed exceptions for HTTP and network failures.
 
@@ -51,6 +52,7 @@ The package registers:
 - `Noria\Payments\KcbBuniIpnVerifier`
 - `Noria\Payments\PaystackClient`
 - `Noria\Payments\PaystackWebhookVerifier`
+- `Noria\Payments\NoriaPayClient`
 
 It also registers the facade alias:
 
@@ -342,6 +344,38 @@ $response = $paystack->initializeTransaction([
     'callback_url' => 'https://example.com/paystack/callback',
 ]);
 ```
+
+### Noria Pay
+
+Set `NORIA_PAY_URL` and `NORIA_PAY_API_KEY` (a server-side project or platform key). Every money-moving call takes an idempotency key you persist before calling, and the client never retries: a timeout or `NoriaPayException::outcomeUnknown()` means the payment may already have moved, so read the transaction again instead of charging with a new key.
+
+```php
+use Noria\Payments\Exceptions\NoriaPayException;
+use Noria\Payments\NoriaPayClient;
+use Noria\Payments\NoriaPayWebhookVerifier;
+
+$pay = app(NoriaPayClient::class);
+
+$tenant = $pay->createProject(['name' => 'Ami Builders', 'reference' => $workspace->id]);
+
+try {
+    $charge = $pay->charge([
+        'amount_minor' => 250000,
+        'channel' => 'mpesa',
+        'payer_phone' => '254712345678',
+        'reference' => 'INV-42',
+        'description' => 'Invoice 42',
+    ], 'invoice-42:attempt-1', $tenant['id']);
+} catch (NoriaPayException $exception) {
+    if ($exception->outcomeUnknown()) {
+        $charge = $pay->transaction($exception->transactionId, $tenant['id']);
+    }
+}
+
+$verified = (new NoriaPayWebhookVerifier($endpointSecret))->verifyRequest($request);
+```
+
+A platform key acts on one of its tenant projects through the `$project` argument, which becomes `X-Noria-Application`. `payout()` returns a `payout_request` instead of a transaction when the project needs a second person to approve payouts.
 
 ### Paystack Webhook Security
 

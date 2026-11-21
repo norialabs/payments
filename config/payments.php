@@ -126,4 +126,10 @@ return [
             'verify_signature' => env('PAYSTACK_WEBHOOK_VERIFY_SIGNATURE', true),
         ],
     ],
+
+    'noria_pay' => [
+        'base_url' => env('NORIA_PAY_URL'),
+        'api_key' => env('NORIA_PAY_API_KEY'),
+        'timeout_seconds' => env('NORIA_PAY_TIMEOUT_SECONDS', 30),
+    ],
 ];
