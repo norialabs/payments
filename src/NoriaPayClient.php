@@ -176,46 +176,46 @@ class NoriaPayClient
     /**
      * @return array<string, mixed>
      */
-    public function setPaymentMethodEnabled(string $provider, bool $enabled, ?string $mode = null, ?string $project = null): array
+    public function setPaymentMethodEnabled(string $provider, bool $enabled, ?string $mode = null, ?string $project = null, ?string $purpose = null): array
     {
-        return $this->send('PATCH', '/v1/payment-methods/'.rawurlencode($provider), ['enabled' => $enabled], query: ['mode' => $mode], project: $project);
+        return $this->send('PATCH', '/v1/payment-methods/'.rawurlencode($provider), ['enabled' => $enabled], query: ['mode' => $mode, 'purpose' => $purpose], project: $project);
     }
 
-    public function removePaymentMethod(string $provider, ?string $mode = null, ?string $project = null): void
+    public function removePaymentMethod(string $provider, ?string $mode = null, ?string $project = null, ?string $purpose = null): void
     {
-        $this->send('DELETE', '/v1/payment-methods/'.rawurlencode($provider), query: ['mode' => $mode], project: $project);
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    public function verifyPaymentMethod(string $provider, ?string $mode = null, ?string $project = null): array
-    {
-        return $this->send('POST', '/v1/payment-methods/'.rawurlencode($provider).'/verify', query: ['mode' => $mode], project: $project);
+        $this->send('DELETE', '/v1/payment-methods/'.rawurlencode($provider), query: ['mode' => $mode, 'purpose' => $purpose], project: $project);
     }
 
     /**
      * @return array<string, mixed>
      */
-    public function registerC2B(string $provider, ?string $mode = null, ?string $project = null): array
+    public function verifyPaymentMethod(string $provider, ?string $mode = null, ?string $project = null, ?string $purpose = null): array
     {
-        return $this->send('POST', '/v1/payment-methods/'.rawurlencode($provider).'/c2b-registration', query: ['mode' => $mode], project: $project);
+        return $this->send('POST', '/v1/payment-methods/'.rawurlencode($provider).'/verify', query: ['mode' => $mode, 'purpose' => $purpose], project: $project);
     }
 
     /**
      * @return array<string, mixed>
      */
-    public function registerPull(string $provider, ?string $mode = null, ?string $project = null): array
+    public function registerC2B(string $provider, ?string $mode = null, ?string $project = null, ?string $purpose = null): array
     {
-        return $this->send('POST', '/v1/payment-methods/'.rawurlencode($provider).'/pull-registration', query: ['mode' => $mode], project: $project);
+        return $this->send('POST', '/v1/payment-methods/'.rawurlencode($provider).'/c2b-registration', query: ['mode' => $mode, 'purpose' => $purpose], project: $project);
     }
 
     /**
      * @return array<string, mixed>
      */
-    public function balance(string $provider, ?string $mode = null, ?string $project = null): array
+    public function registerPull(string $provider, ?string $mode = null, ?string $project = null, ?string $purpose = null): array
     {
-        return $this->send('GET', '/v1/payment-methods/'.rawurlencode($provider).'/balance', query: ['mode' => $mode], project: $project);
+        return $this->send('POST', '/v1/payment-methods/'.rawurlencode($provider).'/pull-registration', query: ['mode' => $mode, 'purpose' => $purpose], project: $project);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function balance(string $provider, ?string $mode = null, ?string $project = null, ?string $purpose = null): array
+    {
+        return $this->send('GET', '/v1/payment-methods/'.rawurlencode($provider).'/balance', query: ['mode' => $mode, 'purpose' => $purpose], project: $project);
     }
 
     /**
@@ -439,6 +439,14 @@ class NoriaPayClient
     public function channelCodes(?string $project = null): array
     {
         return $this->send('GET', '/v1/channel-codes', project: $project);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function paymentOptions(?string $mode = null, ?string $project = null): array
+    {
+        return $this->send('GET', '/v1/payment-options', query: ['mode' => $mode], project: $project);
     }
 
     /**
