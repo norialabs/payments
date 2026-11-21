@@ -110,6 +110,14 @@ class PaymentsManager
 
     /**
      * @param  array<string, mixed>  $overrides
+     */
+    public function noriaPay(array $overrides = []): NoriaPayClient
+    {
+        return NoriaPayClient::make($this->http, $this->mergedConfig('noria_pay', $overrides));
+    }
+
+    /**
+     * @param  array<string, mixed>  $overrides
      * @return array<string, mixed>
      */
     private function mergedConfig(string $provider, array $overrides): array

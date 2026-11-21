@@ -12,6 +12,7 @@ use Noria\Payments\Http\Middleware\VerifySasaPayCallback;
 use Noria\Payments\KcbBuniClient;
 use Noria\Payments\KcbBuniIpnVerifier;
 use Noria\Payments\MpesaClient;
+use Noria\Payments\NoriaPayClient;
 use Noria\Payments\PaymentsManager;
 use Noria\Payments\PaystackClient;
 use Noria\Payments\PaystackWebhookVerifier;
@@ -58,6 +59,10 @@ class PaymentsServiceProvider extends ServiceProvider
 
         $this->app->bind(PaystackWebhookVerifier::class, function (Application $app): PaystackWebhookVerifier {
             return $app->make(PaymentsManager::class)->paystackWebhookVerifier();
+        });
+
+        $this->app->bind(NoriaPayClient::class, function (Application $app): NoriaPayClient {
+            return $app->make(PaymentsManager::class)->noriaPay();
         });
     }
 
