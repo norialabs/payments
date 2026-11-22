@@ -377,6 +377,25 @@ $verified = (new NoriaPayWebhookVerifier($endpointSecret))->verifyRequest($reque
 
 A platform key acts on one of its tenant projects through the `$project` argument, which becomes `X-Noria-Application`. `payout()` returns a `payout_request` instead of a transaction when the project needs a second person to approve payouts.
 
+Each request names a `channel` (`mpesa`, `airtel`, `tkash`, `wallet`, `bank`, `card`) and, for a payout, a `recipient_type` (`phone`, `till`, `paybill`, `bank`, `wallet`). Pay refuses fields the destination does not use and values a provider would have to cut short, before anything is sent. `paymentOptions()` lists what the project can do with its enabled methods, the fields each option needs and, for bank payouts, the banks to choose from, so a form never asks anyone to type a bank code:
+
+```php
+$options = $pay->paymentOptions('live', $tenant['id']);
+
+$pay->payout([
+    'amount_minor' => 150000,
+    'channel' => 'mpesa',
+    'recipient_type' => 'paybill',
+    'recipient_name' => 'Njeri Supplies',
+    'recipient_account' => '247247',
+    'recipient_reference' => '0712345678',
+    'reference' => 'SUP-71',
+    'description' => 'Supplier settlement',
+], 'supplier-71:attempt-1', $tenant['id']);
+```
+
+A project may keep a `collections` and a `payouts` method for one provider, such as a paybill beside a B2C shortcode. The method calls then take the purpose as their last argument: `setPaymentMethodEnabled('daraja', false, 'live', $tenant['id'], 'payouts')`.
+
 ### Paystack Webhook Security
 
 Paystack documents two webhook-origin controls:

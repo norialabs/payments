@@ -62,6 +62,18 @@ it('encodes KYC files and drops empty query values', function (): void {
     Http::assertSent(fn (Request $request): bool => $request->url() === 'https://pay.example.com/v1/payment-methods/daraja/balance');
 });
 
+it('reads the payment options and names a method by purpose', function (): void {
+    Http::fake(['pay.example.com/*' => Http::response(['object' => 'payment_options', 'collections' => [], 'payouts' => []])]);
+
+    expect(noriaPay()->paymentOptions('live', 'project_204')['object'])->toBe('payment_options');
+    noriaPay()->setPaymentMethodEnabled('daraja', false, 'live', 'project_204', 'payouts');
+
+    Http::assertSent(fn (Request $request): bool => $request->url() === 'https://pay.example.com/v1/payment-options?mode=live'
+        && $request->header('X-Noria-Application')[0] === 'project_204');
+    Http::assertSent(fn (Request $request): bool => $request->url() === 'https://pay.example.com/v1/payment-methods/daraja?mode=live&purpose=payouts'
+        && $request->method() === 'PATCH');
+});
+
 it('needs a base URL and an API key', function (): void {
     expect(fn () => NoriaPayClient::make(Http::getFacadeRoot(), ['base_url' => 'https://pay.example.com']))->toThrow(ConfigurationException::class);
 });
