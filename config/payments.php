@@ -32,6 +32,9 @@ return [
         'cache_store' => env('MPESA_CACHE_STORE'),
         'cache_ttl_seconds' => env('MPESA_CACHE_TTL_SECONDS'),
         'endpoints' => [],
+        'callback_security' => [
+            'trusted_ips' => env('MPESA_CALLBACK_TRUSTED_IPS'),
+        ],
     ],
 
     'sasapay' => [

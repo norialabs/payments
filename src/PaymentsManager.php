@@ -54,6 +54,14 @@ class PaymentsManager
     /**
      * @param  array<string, mixed>  $overrides
      */
+    public function mpesaCallbackVerifier(array $overrides = []): MpesaCallbackVerifier
+    {
+        return MpesaCallbackVerifier::make($this->mergedConfig('mpesa', $overrides));
+    }
+
+    /**
+     * @param  array<string, mixed>  $overrides
+     */
     public function sasapayCallbackVerifier(array $overrides = []): SasaPayCallbackVerifier
     {
         return SasaPayCallbackVerifier::make($this->mergedConfig('sasapay', $overrides));
