@@ -138,7 +138,7 @@ Top-level sections:
 | `callback_security.merchant_code` | Merchant code for signed callbacks that carry none, such as the C2B result. Defaults to the SasaPay merchant code. |
 | `callback_security.trusted_ips` | SasaPay callback source IP allowlist. Defaults to SasaPay's published list. Override in published config or with comma-separated `SASAPAY_CALLBACK_TRUSTED_IPS`. |
 | `callback_security.enforce_ip_whitelist` | Reject callbacks from non-allowlisted IPs when using `verifyRequest()` or the middleware. Defaults to `false`; enable it after Laravel trusted proxy handling is configured for your deployment. |
-| `callback_security.verify_signature` | Verify the `X-SasaPay-Signature` HMAC when using `verifyRequest()` or the middleware. Defaults to `true`, as SasaPay advises rejecting invalid or missing signatures. |
+| `callback_security.verify_signature` | Verify the `Sasapay-Signature` HMAC when using `verifyRequest()` or the middleware. Defaults to `true`, as SasaPay advises rejecting invalid or missing signatures. |
 
 SasaPay documents OAuth client-credentials authentication separately for each
 surface, and each authenticates on its own base URL:
@@ -428,24 +428,38 @@ public function __invoke(Request $request, PaystackWebhookVerifier $verifier)
 }
 ```
 
+### M-Pesa Callback Security
+
+Daraja signs nothing it posts back, so the only proof a callback came from
+Safaricom is its source address. `mpesaCallbackVerifier()->verifyRequest($request)`
+accepts a request only from Safaricom's published callback addresses. Override
+the list with `MPESA_CALLBACK_TRUSTED_IPS` (comma-separated, CIDR allowed); an
+empty value keeps the published list. Behind a proxy, make sure `$request->ip()`
+resolves the real client before relying on it.
+
 ### SasaPay Callback Security
 
 SasaPay documents two controls in its
 [Callback Security guide](https://developer.sasapay.app/docs/apis/callback-security?country=ke):
 
-- **HMAC-SHA512 in the `X-SasaPay-Signature` header**, over this message:
+- **HMAC-SHA512 in a signature header**, over this message:
 - **Source-IP allowlisting** against its published callback addresses.
 
 ```text
 sasapay_transaction_code-merchant_code-account_number-payment_reference-amount
 ```
 
-The verifier reads the header, and accepts the amount both as sent and to two
-decimals, because SasaPay signs `1500.00` while its C2B result reports
-`TransAmount` as `1.000000`. That result also carries no merchant code, so set
-`callback_security.merchant_code` or pass `merchantCode` when you construct the
-verifier. A payload `sasapay_signature` field is still read when the header is
-absent.
+SasaPay delivers the signature as `Sasapay-Signature`, although its guide names
+`X-SasaPay-Signature`; the verifier reads both, and a payload `sasapay_signature`
+field when neither header is present. It accepts the amount both as sent and to
+two decimals, because live C2B results are signed over `TransAmount` exactly as
+sent (`5400.000000`) while the guide shows `1500.00`. That result carries no
+merchant code, so the verifier takes it from `callback_security.merchant_code`,
+then `merchant_code`, then `payment_defaults.MerchantCode`, or the `merchantCode`
+you pass when you construct it.
+
+Failed STK results are signed too, but over values the callback does not carry,
+so they cannot be verified; confirm a failure with `transactionStatus()` instead.
 
 If you serve several merchants, build a verifier per merchant with its own client ID
 and merchant code, as the config defaults cover only one.

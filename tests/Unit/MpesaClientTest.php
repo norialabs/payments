@@ -1,10 +1,13 @@
 <?php
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Noria\Payments\Contracts\AccessTokenProvider;
 use Noria\Payments\Exceptions\BusinessException;
 use Noria\Payments\Exceptions\ConfigurationException;
+use Noria\Payments\MpesaCallbackVerifier;
 use Noria\Payments\MpesaClient;
+use Noria\Payments\PaymentsManager;
 use Noria\Payments\Support\Hooks;
 use Noria\Payments\Support\RequestOptions;
 
@@ -426,4 +429,24 @@ it('detects daraja business failures returned with http 200', function (): void 
 
     expect(fn () => $strict->accountBalance([]))
         ->toThrow(BusinessException::class, 'Bad Request - Invalid BusinessShortCode');
+});
+
+it('accepts an mpesa callback only from a safaricom address', function (): void {
+    $from = fn (string $ip): Request => Request::create('/mpesa/callback', 'POST', server: ['REMOTE_ADDR' => $ip]);
+    $verifier = app(PaymentsManager::class)->mpesaCallbackVerifier();
+
+    expect($verifier->verifyRequest($from('196.201.212.69')))->toBeTrue()
+        ->and($verifier->verifyRequest($from('13.214.60.231')))->toBeFalse()
+        ->and($verifier->verifyRequest($from('127.0.0.1')))->toBeFalse();
+});
+
+it('takes a configured mpesa callback allowlist and falls back to safaricom when it is empty', function (): void {
+    $from = fn (string $ip): Request => Request::create('/mpesa/callback', 'POST', server: ['REMOTE_ADDR' => $ip]);
+    $configured = MpesaCallbackVerifier::make(['callback_security' => ['trusted_ips' => '203.0.113.0/24, 198.51.100.7']]);
+    $blank = MpesaCallbackVerifier::make(['callback_security' => ['trusted_ips' => ' , ']]);
+
+    expect($configured->verifyRequest($from('203.0.113.9')))->toBeTrue()
+        ->and($configured->verifyRequest($from('196.201.212.69')))->toBeFalse()
+        ->and($blank->verifyRequest($from('196.201.212.69')))->toBeTrue()
+        ->and($blank->verifyRequest($from('203.0.113.9')))->toBeFalse();
 });

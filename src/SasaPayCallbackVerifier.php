@@ -85,7 +85,12 @@ class SasaPayCallbackVerifier
         ],
     ];
 
-    public const SIGNATURE_HEADER = 'X-SasaPay-Signature';
+    public const SIGNATURE_HEADER = 'Sasapay-Signature';
+
+    public const SIGNATURE_HEADERS = [
+        self::SIGNATURE_HEADER,
+        'X-SasaPay-Signature',
+    ];
 
     private const SIGNATURE_PAYLOAD_KEYS = [
         'sasapay_signature',
@@ -108,13 +113,19 @@ class SasaPayCallbackVerifier
     public static function make(array $config = []): self
     {
         $callbackConfig = (array) ($config['callback_security'] ?? []);
+        $paymentDefaults = (array) ($config['payment_defaults'] ?? []);
 
         return new self(
             secretKey: self::nullableString($callbackConfig['secret_key'] ?? $config['client_id'] ?? null),
             trustedIps: self::normalizeTrustedIps($callbackConfig['trusted_ips'] ?? self::TRUSTED_CALLBACK_IPS),
             enforceIpWhitelist: self::boolean($callbackConfig['enforce_ip_whitelist'] ?? false),
             verifySignature: self::boolean($callbackConfig['verify_signature'] ?? true),
-            merchantCode: self::nullableString($callbackConfig['merchant_code'] ?? $config['merchant_code'] ?? null),
+            merchantCode: self::nullableString(
+                $callbackConfig['merchant_code']
+                    ?? $config['merchant_code']
+                    ?? $paymentDefaults['MerchantCode']
+                    ?? null,
+            ),
         );
     }
 
@@ -124,12 +135,10 @@ class SasaPayCallbackVerifier
         ?bool $verifySignature = null,
     ): bool {
         $payload = Setting::map($request->all());
-        $header = $request->header(self::SIGNATURE_HEADER);
-        $signature = is_string($header) && trim($header) !== '' ? trim($header) : $this->signatureFromPayload($payload);
 
         return $this->verify(
             payload: $payload,
-            signature: $signature,
+            signature: $this->signatureFromRequest($request),
             ip: $request->ip(),
             enforceIpWhitelist: $enforceIpWhitelist,
             verifySignature: $verifySignature,
@@ -275,6 +284,19 @@ class SasaPayCallbackVerifier
         }
 
         return false;
+    }
+
+    public function signatureFromRequest(Request $request): ?string
+    {
+        foreach (self::SIGNATURE_HEADERS as $name) {
+            $header = $request->header($name);
+
+            if (is_string($header) && trim($header) !== '') {
+                return trim($header);
+            }
+        }
+
+        return $this->signatureFromPayload(Setting::map($request->all()));
     }
 
     /**
