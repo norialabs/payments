@@ -87,3 +87,15 @@ it('is built from the noria_pay config', function (): void {
     Http::assertSent(fn (Request $request): bool => $request->url() === 'https://pay.example.com/v1/applications?reference=workspace-204'
         && $request->header('Authorization')[0] === 'Bearer pay_live_config');
 });
+
+it('sets the channels a method serves by default', function (): void {
+    Http::fake(['pay.example.com/*' => Http::response(['object' => 'payment_method', 'provider' => 'daraja', 'default_channels' => ['mpesa']])]);
+
+    $method = noriaPay()->setPaymentMethodDefaults('daraja', ['mpesa'], 'live', 'project_204');
+
+    expect($method['default_channels'])->toBe(['mpesa']);
+    Http::assertSent(fn (Request $request): bool => $request->url() === 'https://pay.example.com/v1/payment-methods/daraja/defaults?mode=live'
+        && $request->method() === 'PUT'
+        && $request['channels'] === ['mpesa']
+        && $request->header('X-Noria-Application')[0] === 'project_204');
+});
