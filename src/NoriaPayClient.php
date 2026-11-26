@@ -181,6 +181,17 @@ class NoriaPayClient
         return $this->send('PATCH', '/v1/payment-methods/'.rawurlencode($provider), ['enabled' => $enabled], query: ['mode' => $mode, 'purpose' => $purpose], project: $project);
     }
 
+    /**
+     * Makes this method the project's default for these channels when a charge names no provider. An empty list clears them.
+     *
+     * @param  list<string>  $channels
+     * @return array<string, mixed>
+     */
+    public function setPaymentMethodDefaults(string $provider, array $channels, ?string $mode = null, ?string $project = null, ?string $purpose = null): array
+    {
+        return $this->send('PUT', '/v1/payment-methods/'.rawurlencode($provider).'/defaults', ['channels' => $channels], query: ['mode' => $mode, 'purpose' => $purpose], project: $project);
+    }
+
     public function removePaymentMethod(string $provider, ?string $mode = null, ?string $project = null, ?string $purpose = null): void
     {
         $this->send('DELETE', '/v1/payment-methods/'.rawurlencode($provider), query: ['mode' => $mode, 'purpose' => $purpose], project: $project);
